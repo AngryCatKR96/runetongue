@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledExecutorService;
 import javax.inject.Inject;
 import javax.swing.SwingUtilities;
@@ -67,6 +68,9 @@ public class RuneHangulPlugin extends Plugin
 	private DialogueTranslator dialogue;
 
 	@Inject
+	private MissingTexts missing;
+
+	@Inject
 	private ClientToolbar clientToolbar;
 
 	@Inject
@@ -80,7 +84,8 @@ public class RuneHangulPlugin extends Plugin
 	@Override
 	protected void startUp() throws Exception
 	{
-		panel = new RuneHangulPanel(this::openFolder, this::addFiles, () -> reload(true));
+		panel = new RuneHangulPanel(() -> openFolder(this::folder), this::addFiles, () -> reload(true),
+			() -> openFolder(this::missingFolder));
 		navButton = NavigationButton.builder()
 			.tooltip("RuneHangul")
 			.icon(icon())
@@ -89,6 +94,7 @@ public class RuneHangulPlugin extends Plugin
 			.build();
 		clientToolbar.addNavigation(navButton);
 		log.debug("RuneHangul started");
+		missing.start(this::missingFolder);
 		reload(false);
 	}
 
@@ -96,6 +102,7 @@ public class RuneHangulPlugin extends Plugin
 	protected void shutDown() throws Exception
 	{
 		store.stop();
+		missing.stop();
 		dialogue.reset();
 		clientToolbar.removeNavigation(navButton);
 		navButton = null;
@@ -109,6 +116,8 @@ public class RuneHangulPlugin extends Plugin
 	{
 		if (RuneHangulConfig.GROUP.equals(event.getGroup()) && RuneHangulConfig.LANGUAGE.equals(event.getKey()))
 		{
+			missing.start(this::missingFolder);
+			dialogue.reset();
 			reload(true);
 		}
 	}
@@ -157,6 +166,11 @@ public class RuneHangulPlugin extends Plugin
 		return getPluginDirectory().join("translations", config.language().getCode());
 	}
 
+	private Filepath missingFolder() throws IOException
+	{
+		return getPluginDirectory().join("missing", config.language().getCode());
+	}
+
 	private void reload(boolean announce)
 	{
 		RuneHangulPanel target = panel;
@@ -181,13 +195,13 @@ public class RuneHangulPlugin extends Plugin
 		});
 	}
 
-	private void openFolder()
+	private void openFolder(Callable<Filepath> folder)
 	{
 		executor.execute(() ->
 		{
 			try
 			{
-				Filepath dir = folder();
+				Filepath dir = folder.call();
 				dir.createDirectories();
 				LinkBrowser.open(dir.toString());
 			}

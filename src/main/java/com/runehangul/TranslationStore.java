@@ -50,6 +50,12 @@ public class TranslationStore
 		return translations;
 	}
 
+	/** False until the first load finishes (and after stop), when every lookup misses. */
+	public boolean isLoaded()
+	{
+		return translations != Translations.EMPTY;
+	}
+
 	public synchronized void reload(Callable<Filepath> folder, Language language, Consumer<LoadReport> onDone)
 	{
 		cancelPending();

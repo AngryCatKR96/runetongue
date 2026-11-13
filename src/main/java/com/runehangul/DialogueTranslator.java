@@ -61,16 +61,18 @@ class DialogueTranslator
 	private final Client client;
 	private final GlyphIcons glyphs;
 	private final TranslationStore store;
+	private final MissingTexts missing;
 	private final Map<Long, Shown> shown = new HashMap<>();
 	/** The NPC in the current conversation, in English; player lines and options are looked up under it. */
 	private String npc = "";
 
 	@Inject
-	DialogueTranslator(Client client, GlyphIcons glyphs, TranslationStore store)
+	DialogueTranslator(Client client, GlyphIcons glyphs, TranslationStore store, MissingTexts missing)
 	{
 		this.client = client;
 		this.glyphs = glyphs;
 		this.store = store;
+		this.missing = missing;
 	}
 
 	void update()
@@ -174,6 +176,10 @@ class DialogueTranslator
 		log.debug("dialogue {} color={} scope={} text={} -> {}", widget.getId(), Integer.toHexString(widget.getTextColor()), scope, original, found);
 		if (found == null)
 		{
+			if (store.isLoaded())
+			{
+				missing.record(source.getKey(), scope);
+			}
 			return null;
 		}
 		String text = Normalizer.restore(found, source);

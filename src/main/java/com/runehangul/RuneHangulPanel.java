@@ -25,7 +25,7 @@ class RuneHangulPanel extends PluginPanel
 
 	private final JTextArea report = new JTextArea("불러오는 중…");
 
-	RuneHangulPanel(Runnable openFolder, Consumer<List<Filepath>> addFiles, Runnable reload)
+	RuneHangulPanel(Runnable openFolder, Consumer<List<Filepath>> addFiles, Runnable reload, Runnable openMissingFolder)
 	{
 		setLayout(new BorderLayout(0, 8));
 
@@ -33,6 +33,7 @@ class RuneHangulPanel extends PluginPanel
 		buttons.add(button("폴더 열기", openFolder));
 		buttons.add(button("파일 추가", () -> chooseFiles(addFiles)));
 		buttons.add(button("다시 불러오기", reload));
+		buttons.add(button("빠진 문장 폴더 열기", openMissingFolder));
 		add(buttons, BorderLayout.NORTH);
 
 		report.setFont(FONT);
