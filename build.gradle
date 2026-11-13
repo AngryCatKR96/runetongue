@@ -29,6 +29,28 @@ dependencies {
 
 group = 'com.runehangul'
 
+// Build-time translation bundler: not part of the plugin jar.
+sourceSets {
+	bundler {
+		compileClasspath += sourceSets.main.output.classesDirs
+		runtimeClasspath += sourceSets.main.output.classesDirs
+	}
+}
+
+def bundleDir = layout.buildDirectory.dir('generated/translations')
+def bundleTranslations = tasks.register('bundleTranslations', JavaExec) {
+	description = 'Bundles data/<lang>/*.tsv into translations_<lang>.tsv.gz resources.'
+	classpath = sourceSets.bundler.runtimeClasspath
+	mainClass = 'com.runehangul.bundler.BundleTranslations'
+	def reportDir = layout.buildDirectory.dir('reports/translations')
+	inputs.dir('data')
+	outputs.dir(bundleDir)
+	outputs.dir(reportDir)
+	doFirst { delete bundleDir }
+	args file('data').path, bundleDir.get().asFile.path, reportDir.get().asFile.path
+}
+sourceSets.main.resources.srcDir(files(bundleDir).builtBy(bundleTranslations))
+
 tasks.withType(JavaCompile).configureEach {
 	options.encoding = 'UTF-8'
 	options.release.set(11)
