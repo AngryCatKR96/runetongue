@@ -25,6 +25,8 @@ import net.runelite.api.GameState;
 import net.runelite.api.events.BeforeRender;
 import net.runelite.api.events.CommandExecuted;
 import net.runelite.api.events.GameStateChanged;
+import net.runelite.api.events.MenuOpened;
+import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -71,6 +73,9 @@ public class RuneHangulPlugin extends Plugin
 	private MissingTexts missing;
 
 	@Inject
+	private MenuTranslator menu;
+
+	@Inject
 	private ClientToolbar clientToolbar;
 
 	@Inject
@@ -104,6 +109,7 @@ public class RuneHangulPlugin extends Plugin
 		store.stop();
 		missing.stop();
 		dialogue.reset();
+		menu.reset();
 		clientToolbar.removeNavigation(navButton);
 		navButton = null;
 		panel = null;
@@ -126,6 +132,21 @@ public class RuneHangulPlugin extends Plugin
 	public void onBeforeRender(BeforeRender event)
 	{
 		dialogue.update();
+		menu.update();
+	}
+
+	/** Late, so the menu is translated after other plugins have changed it. */
+	@Subscribe(priority = -100)
+	public void onMenuOpened(MenuOpened event)
+	{
+		menu.update();
+	}
+
+	/** Early, so other plugins see the English option and target. */
+	@Subscribe(priority = 100)
+	public void onMenuOptionClicked(MenuOptionClicked event)
+	{
+		menu.restore(event.getMenuEntry());
 	}
 
 	@Subscribe
@@ -183,6 +204,7 @@ public class RuneHangulPlugin extends Plugin
 			SwingUtilities.invokeLater(() -> target.show(report));
 			clientThread.invoke(() ->
 			{
+				menu.reset();
 				if (announce || client.getGameState() == GameState.LOGGED_IN)
 				{
 					announce(report);
