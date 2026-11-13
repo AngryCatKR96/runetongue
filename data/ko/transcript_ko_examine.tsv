@@ -2890,7 +2890,7 @@ All is white!	온통 하얗다!	examine	item	Dummy
 Filled with items. Like a bank, but spookier!	아이템이 가득 들어 있다. 은행 같지만 더 으스스하다!	examine	item	Coffin
 Aside from the braaaains on the lapel, it's still quite good.	옷깃에 묻은 뇌애애애애... 만 빼면 아직 꽤 괜찮다.	examine	item	Zombie shirt
 Good for a shamble about town.	동네를 비틀비틀 돌아다니기 좋다.	examine	item	Zombie trousers
-I look 40,000 years old in this...	이걸 쓰니 4만 살은 먹어 보인다...	examine	item	Zombie mask
+I look 40,000 years old in this...	이걸 쓰니 40,000살은 먹어 보인다...	examine	item	Zombie mask
 Smells pretty funky.	꽤 고약한 냄새가 난다.	examine	item	Zombie gloves
 Thrilling.	스릴 넘친다.	examine	item	Zombie boots
 It seems bleached with age.	세월에 하얗게 바랜 것 같다.	examine	item	Item
@@ -2909,7 +2909,7 @@ A silvery rod of mithril and silver with a sapphire on the top.	꼭대기에 사
 An enchanted rod of mithril and silver with a sapphire on the top.	꼭대기에 사파이어가 박힌, 마법이 깃든 미스릴과 은 막대다.	examine	item	Silvthrill rod
 A fully charged rod.	완전히 충전된 막대다.	examine	item	Rod of ivandis (10)
 A partially charged rod.	일부 충전된 막대다.	examine	item	Rod of ivandis (9)
-2! 2 charges left! Ha Ha Ha.	둘! 충전이 둘 남았다! 하하하.	examine	item	Rod of ivandis (2)
+2! 2 charges left! Ha Ha Ha.	2! 충전이 2번 남았다! 하하하.	examine	item	Rod of ivandis (2)
 A mould of the Rod of Ivandis.	Rod of Ivandis(이반디스의 막대)의 거푸집이다.	examine	item	Rod mould
 It's ground up silver.	곱게 간 은이다.	examine	item	Silver dust
 An unfinished potion.	미완성 물약이다.	examine	item	Guthix balance (unf)
@@ -5390,7 +5390,7 @@ A clue suggested by Solo Gi!	Solo Gi 님이 제안한 단서다!	examine	item	Cl
 A clue suggested by xunhallowedx!	xunhallowedx 님이 제안한 단서다!	examine	item	Clue scroll (hard)
 I need to decipher this.	이걸 해독해야 한다.	examine	item	Clue scroll (hard)
 Get a head in life.	머리 하나 챙겨서 출세하자.	examine	item	Zombie head
-You'd expect this to interfere with your 3D vision.	이걸 쓰면 입체 시력에 지장이 있을 것 같다.	examine	item	Cyclops head
+You'd expect this to interfere with your 3D vision.	이걸 쓰면 3D 시력에 지장이 있을 것 같다.	examine	item	Cyclops head
 A pair of Nunchaku, smells of pizza.	쌍절곤 한 벌이다. 피자 냄새가 난다.	examine	item	Nunchaku
 Ancient blessed dragonhide boots.	Ancient(고대 신)의 축복을 받은 용가죽 장화다.	examine	item	Ancient d'hide boots
 Bandos blessed dragonhide boots.	Bandos(반도스)의 축복을 받은 용가죽 장화다.	examine	item	Bandos d'hide boots
@@ -11112,7 +11112,7 @@ Mine mine mine mine MINE!	캐자 캐자 캐자 캐자 내 거다!	examine	npc	Mi
 Mine mine mine mine HIS!	캐자 캐자 캐자 캐자 쟤 거다!	examine	npc	Miner
 He could have been a great ballet dancer if they'd let him try.	기회만 줬다면 위대한 발레리노가 됐을지도 모른다.	examine	npc	Miner
 Secretly, he'd like to rescue princesses and eat mushrooms.	남몰래 공주를 구하고 버섯을 먹고 싶어 한다.	examine	npc	Miner
-He's supporting 3 small children. Very small children.	어린아이 셋을 부양하고 있다. 아주 작은 아이들이다.	examine	npc	Miner
+He's supporting 3 small children. Very small children.	어린아이 3명을 부양하고 있다. 아주 작은 아이들이다.	examine	npc	Miner
 Keeps order in Seers bank.	Seers(시어스) 은행의 질서를 지킨다.	examine	npc	Guard
 Keeps order in Seers and Catherby bank.	Seers(시어스)와 Catherby(캐서비) 은행의 질서를 지킨다.	examine	npc	Guard
 Master of all clues.	모든 단서의 달인이다.	examine	npc	Sherlock
@@ -12360,7 +12360,7 @@ Who's a good kitty?	누가 착한 고양이일까?	examine	npc	Lynx
 Master of the lynx.	스라소니의 주인이다.	examine	npc	Lynx Tamer
 Ready to defend Kourend.	Kourend(쿠렌드)를 지킬 준비가 되어 있다.	examine	npc	Soldier
 The other soldiers won't be messing around with her about.	그녀가 있으면 다른 병사들이 함부로 까불지 못할 것이다.	examine	npc	Sergeant
-Soon he'll be able to hit a kalphite larva at 100 paces.	곧 백 걸음 떨어진 kalphite larva(칼파이트 유충)도 맞힐 수 있을 것이다.	examine	npc	Ranger
+Soon he'll be able to hit a kalphite larva at 100 paces.	곧 100걸음 떨어진 kalphite larva(칼파이트 유충)도 맞힐 수 있을 것이다.	examine	npc	Ranger
 This person is curiously looking around.	호기심 어린 눈으로 주위를 둘러보고 있다.	examine	npc	Farolt
 The other guards won't be messing around with him about.	그가 있으면 다른 경비병들이 함부로 까불지 못할 것이다.	examine	npc	Head Guard
 I wonder if she gets stuck behind fences.	울타리 뒤에 끼어 버리지는 않을까?	examine	npc	Guard
@@ -16116,7 +16116,7 @@ All tangled up!	온통 뒤엉켜 있다!	examine	object	A wall
 A magic door.	마법의 문이다.	examine	object	Magic door
 Shelves of colourful potion gourds!	알록달록한 물약 호리병이 가득한 선반들이다!	examine	object	Potion shelves
 A shelf of colourful potion gourds!	알록달록한 물약 호리병이 놓인 선반이다!	examine	object	Potion shelf
-Fairy Nuff passed healing 101!	Fairy Nuff(요정 너프)가 치유학 기초 과정을 통과했다!	examine	object	Healing certificate
+Fairy Nuff passed healing 101!	Fairy Nuff(요정 너프)가 치유학 101 과정을 통과했다!	examine	object	Healing certificate
 It says Nuff is a healer.	Nuff(너프)가 치유사라고 적혀 있다.	examine	object	Certificate of healing
 An assortment of colourful bubbling and smoking potions!	보글보글 끓고 연기가 피어오르는 알록달록한 물약들이 잔뜩 있다!	examine	object	A fairy workbench
 A beautiful fairy fountain!	아름다운 요정 분수다!	examine	object	Fairy fountain
@@ -19157,7 +19157,7 @@ A large display of Cerberus in her gloomy lair.	음침한 은신처에 있는 Ce
 A large display of the Abyssal Sire in his miasmic lair.	독기 자욱한 은신처에 있는 Abyssal Sire(심연의 군주)의 대형 전시물이다.	examine	object	Abyssal Sire display
 A large display of Skotizo in his dark lair.	어두운 은신처에 있는 Skotizo(스코티조)의 대형 전시물이다.	examine	object	Skotizo display
 A display of player killing mastery... or possibly a wanted criminal...	플레이어 사냥 실력의 증표... 혹은 수배 중인 범죄자일지도...	examine	object	Mounted Emblem
-100 million of your finest coins!	최고급 코인 1억 개!	examine	object	Mounted Coins
+100 million of your finest coins!	최고급 코인 1억(100 million) 개!	examine	object	Mounted Coins
 You could display a prestigious cape here.	여기에 명예로운 망토를 전시할 수 있다.	examine	object	Cape hanger
 A mounted cape worn by the most elite adventurers.	가장 뛰어난 모험가가 입는 망토를 걸어 둔 것이다.	examine	object	Mounted Achievement Diary Cape
 A mounted cape of fire.	불의 망토를 걸어 둔 것이다.	examine	object	Mounted Fire Cape
