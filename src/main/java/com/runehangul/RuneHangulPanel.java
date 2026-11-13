@@ -2,6 +2,7 @@ package com.runehangul;
 
 import com.runehangul.text.ParseResult;
 import java.awt.BorderLayout;
+import java.awt.Font;
 import java.awt.GridLayout;
 import java.util.List;
 import java.util.function.Consumer;
@@ -10,6 +11,7 @@ import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import net.runelite.client.ui.ColorScheme;
+import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
 import net.runelite.client.util.Filepath;
 
@@ -18,6 +20,8 @@ class RuneHangulPanel extends PluginPanel
 {
 	static final int SKIPPED_LINES_PER_FILE = 50;
 	private static final int DETAIL_LENGTH = 80;
+	/** The RuneScape font RuneLite uses by default has no Hangul; this one falls back to OS fonts. */
+	private static final Font FONT = FontManager.getDefaultFont().deriveFont(12f);
 
 	private final JTextArea report = new JTextArea("불러오는 중…");
 
@@ -31,6 +35,7 @@ class RuneHangulPanel extends PluginPanel
 		buttons.add(button("다시 불러오기", reload));
 		add(buttons, BorderLayout.NORTH);
 
+		report.setFont(FONT);
 		report.setEditable(false);
 		report.setLineWrap(true);
 		report.setBackground(ColorScheme.DARKER_GRAY_COLOR);
@@ -55,7 +60,7 @@ class RuneHangulPanel extends PluginPanel
 			.setIsOpen()
 			.setAcceptsFiles()
 			.setMultiSelectionEnabled(true)
-			.addExtensionFilter("번역 파일 (tsv)", "tsv")
+			.addExtensionFilter("TSV (*.tsv)", "tsv")
 			.setDialogTitle("번역 폴더에 넣을 tsv 파일")
 			.showDialog(this);
 		if (chosen != null && !chosen.isEmpty())
@@ -67,6 +72,7 @@ class RuneHangulPanel extends PluginPanel
 	private static JButton button(String label, Runnable action)
 	{
 		JButton button = new JButton(label);
+		button.setFont(FONT);
 		button.addActionListener(e -> action.run());
 		return button;
 	}

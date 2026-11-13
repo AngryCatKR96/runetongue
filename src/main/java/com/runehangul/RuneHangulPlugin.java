@@ -163,7 +163,7 @@ public class RuneHangulPlugin extends Plugin
 				dir.createDirectories();
 				LinkBrowser.open(dir.toString());
 			}
-			catch (IOException e)
+			catch (Exception e)
 			{
 				log.warn("could not open translation folder", e);
 				showMessage("폴더를 열지 못했어요: " + e.getMessage());
@@ -181,14 +181,12 @@ public class RuneHangulPlugin extends Plugin
 				dir.createDirectories();
 				for (Filepath file : chosen)
 				{
-					if (!dir.equals(file.getParent()))
-					{
-						file.copyTo(dir.join(file.getFileName()), StandardCopyOption.REPLACE_EXISTING);
-					}
+					// A file already in the folder copies onto itself, which Files.copy skips.
+					file.copyTo(dir.join(file.getFileName()), StandardCopyOption.REPLACE_EXISTING);
 				}
 				reload(true);
 			}
-			catch (IOException e)
+			catch (Exception e)
 			{
 				log.warn("could not copy translation files", e);
 				showMessage("파일을 복사하지 못했어요: " + e.getMessage());
