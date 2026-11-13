@@ -51,6 +51,14 @@ def bundleTranslations = tasks.register('bundleTranslations', JavaExec) {
 }
 sourceSets.main.resources.srcDir(files(bundleDir).builtBy(bundleTranslations))
 
+tasks.register('makeIcon', JavaExec) {
+	description = 'Draws the Plugin Hub icon.png from the bundled glyph font.'
+	classpath = sourceSets.bundler.runtimeClasspath + files(sourceSets.main.output.resourcesDir)
+	mainClass = 'com.runehangul.bundler.MakeIcon'
+	dependsOn 'processResources'
+	args file('icon.png').path
+}
+
 tasks.withType(JavaCompile).configureEach {
 	options.encoding = 'UTF-8'
 	options.release.set(11)

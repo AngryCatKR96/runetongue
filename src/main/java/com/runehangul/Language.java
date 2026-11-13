@@ -19,6 +19,12 @@ public enum Language
 	private final String displayName;
 	private final String bundledResource;
 
+	/** The plugin's own messages are Korean for Korean and English for every other language. */
+	public String ui(String korean, String english)
+	{
+		return this == KOREAN ? korean : english;
+	}
+
 	@Override
 	public String toString()
 	{

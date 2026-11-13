@@ -51,9 +51,17 @@ public class LoadReport
 	{
 		if (error != null)
 		{
-			return "번역 폴더를 읽지 못했어요: " + error;
+			return language.ui("번역 폴더를 읽지 못했어요: ", "Could not read the translation folder: ") + error;
 		}
-		return String.format("%s 파일 %d개, %d줄 불러옴, %d줄 건너뜀, 미번역 %d줄 (내장 번역 %d개)",
+		return String.format(language.ui("%s 파일 %d개, %d줄 불러옴, %d줄 건너뜀, 미번역 %d줄 (내장 번역 %d개)",
+			"%s: %d files, %d lines loaded, %d skipped, %d untranslated (%d bundled)"),
 			language.getCode(), files.size(), loadedLines(), skippedLines(), untranslatedLines(), bundledEntries);
+	}
+
+	/** "6번째 줄: 이유" or "line 6: reason". */
+	public String skippedLine(ParseResult.Skipped s)
+	{
+		return language.ui(s.getLine() + "번째 줄: " + s.getReason().getMessage(),
+			"line " + s.getLine() + ": " + s.getReason().getEnglishMessage());
 	}
 }

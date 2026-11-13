@@ -96,7 +96,7 @@ public final class TsvParser
 					&& !previous.getTranslation().equals(e.getTranslation())
 					&& overriddenLines.add(previous.getLine()))
 				{
-					skipped.add(new ParseResult.Skipped(previous.getLine(), SkipReason.OVERRIDDEN, lineNo + "번째 줄"));
+					skipped.add(new ParseResult.Skipped(previous.getLine(), SkipReason.OVERRIDDEN, "-> " + lineNo));
 				}
 			}
 		}
@@ -122,7 +122,7 @@ public final class TsvParser
 			Set<String> actual = Normalizer.placeholders(normalized);
 			if (!expected.equals(actual))
 			{
-				return new ParseResult.Skipped(lineNo, SkipReason.PLACEHOLDER_MISMATCH, "원문 " + expected + ", 번역 " + actual);
+				return new ParseResult.Skipped(lineNo, SkipReason.PLACEHOLDER_MISMATCH, "english " + expected + ", translation " + actual);
 			}
 			out.add(new Entry(source.getKey(), normalized, scope, lineNo));
 		}

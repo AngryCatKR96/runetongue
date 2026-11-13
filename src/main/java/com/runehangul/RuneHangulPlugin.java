@@ -44,7 +44,7 @@ import net.runelite.client.util.LinkBrowser;
 @Slf4j
 @PluginDescriptor(
 	name = "RuneHangul",
-	description = "Translates Old School RuneScape into Korean",
+	description = "Play in Korean, or in your own language by dropping translation tsv files into a folder",
 	tags = {"korean", "translation", "language", "한국어"},
 	internalName = "runehangul"
 )
@@ -107,7 +107,7 @@ public class RuneHangulPlugin extends Plugin
 	@Override
 	protected void startUp() throws Exception
 	{
-		panel = new RuneHangulPanel(() -> openFolder(this::folder), this::addFiles, () -> reload(true),
+		panel = new RuneHangulPanel(config.language(), () -> openFolder(this::folder), this::addFiles, () -> reload(true),
 			() -> openFolder(this::missingFolder));
 		navButton = NavigationButton.builder()
 			.tooltip("RuneHangul")
@@ -215,7 +215,7 @@ public class RuneHangulPlugin extends Plugin
 			String english = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
 			SourceText source = Normalizer.normalizeSource(english);
 			String found = store.get().find(source.getKey(), Scope.ANY);
-			say(found == null ? english + " -> 번역 없음" : english + " -> " + Normalizer.restore(found, source));
+			say(found == null ? english + config.language().ui(" -> 번역 없음", " -> no translation") : english + " -> " + Normalizer.restore(found, source));
 		}
 	}
 
@@ -270,7 +270,7 @@ public class RuneHangulPlugin extends Plugin
 			catch (Exception e)
 			{
 				log.warn("could not open translation folder", e);
-				showMessage("폴더를 열지 못했어요: " + e.getMessage());
+				showMessage(config.language().ui("폴더를 열지 못했어요: ", "Could not open the folder: ") + e.getMessage());
 			}
 		});
 	}
@@ -293,7 +293,7 @@ public class RuneHangulPlugin extends Plugin
 			catch (Exception e)
 			{
 				log.warn("could not copy translation files", e);
-				showMessage("파일을 복사하지 못했어요: " + e.getMessage());
+				showMessage(config.language().ui("파일을 복사하지 못했어요: ", "Could not copy the files: ") + e.getMessage());
 			}
 		});
 	}
@@ -339,7 +339,7 @@ public class RuneHangulPlugin extends Plugin
 					say("…");
 					return;
 				}
-				say(file.getFileName() + " " + s.getLine() + "번째 줄: " + s.getReason().getMessage());
+				say(file.getFileName() + " " + report.skippedLine(s));
 			}
 		}
 	}

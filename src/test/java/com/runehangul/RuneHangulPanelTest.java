@@ -29,6 +29,7 @@ public class RuneHangulPanelTest
 		assertTrue(text, text.contains("example_ko.tsv: 5줄 불러옴, 1줄 건너뜀, 미번역 1줄"));
 		assertTrue(text, text.contains("  6번째 줄: 치환 기호가 원문과 다름"));
 		assertTrue(text, text.contains("  8번째 줄: 같은 파일의 뒤 줄이 덮어씀"));
+		assertTrue(text, text.contains("    -> 9"));
 	}
 
 	@Test
@@ -51,7 +52,8 @@ public class RuneHangulPanelTest
 		LoadReport empty = new LoadReport(Language.SPANISH, "/folder/es", List.of(), 0, null);
 		String text = RuneHangulPanel.describe(empty);
 
-		assertTrue(text, text.contains("es 파일 0개"));
-		assertTrue(text, text.contains("폴더에 tsv 파일이 없어요"));
+		// Every language but Korean gets the plugin's messages in English.
+		assertTrue(text, text.contains("es: 0 files, 0 lines loaded"));
+		assertTrue(text, text.contains("No tsv files in the folder yet"));
 	}
 }
