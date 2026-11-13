@@ -28,6 +28,7 @@ import net.runelite.api.events.CommandExecuted;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.MenuOpened;
 import net.runelite.api.events.MenuOptionClicked;
+import net.runelite.api.events.OverheadTextChanged;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -36,6 +37,7 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
+import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.Filepath;
 import net.runelite.client.util.LinkBrowser;
 
@@ -86,6 +88,12 @@ public class RuneHangulPlugin extends Plugin
 	private WidgetTexts widgetTexts;
 
 	@Inject
+	private OverlayManager overlayManager;
+
+	@Inject
+	private OriginalTextTooltip originalTooltip;
+
+	@Inject
 	private ClientToolbar clientToolbar;
 
 	@Inject
@@ -108,6 +116,7 @@ public class RuneHangulPlugin extends Plugin
 			.panel(panel)
 			.build();
 		clientToolbar.addNavigation(navButton);
+		overlayManager.add(originalTooltip);
 		log.debug("RuneHangul started");
 		missing.start(this::missingFolder);
 		reload(false);
@@ -122,6 +131,7 @@ public class RuneHangulPlugin extends Plugin
 		menu.reset();
 		widgetTexts.reset();
 		clientToolbar.removeNavigation(navButton);
+		overlayManager.remove(originalTooltip);
 		navButton = null;
 		panel = null;
 		unannounced = null;
@@ -144,6 +154,12 @@ public class RuneHangulPlugin extends Plugin
 		dialogue.update();
 		interfaces.update();
 		menu.update();
+	}
+
+	@Subscribe(priority = -100)
+	public void onOverheadTextChanged(OverheadTextChanged event)
+	{
+		chatTranslator.translateOverhead(event.getActor(), event.getOverheadText());
 	}
 
 	/** Late, so other plugins see the English message first. */

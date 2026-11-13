@@ -6,9 +6,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import net.runelite.api.Actor;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.MessageNode;
+import net.runelite.api.NPC;
 import net.runelite.api.gameval.VarbitID;
 
 /**
@@ -20,6 +22,7 @@ import net.runelite.api.gameval.VarbitID;
 @Singleton
 class ChatTranslator
 {
+	private static final int OVERHEAD_YELLOW = 0xFFFF00;
 	private static final Pattern LEADING_COLOR = Pattern.compile("^<col=([0-9a-fA-F]{6})>");
 
 	private final Client client;
@@ -43,7 +46,7 @@ class ChatTranslator
 		{
 			return false;
 		}
-		String found = lookup.find(text, scope, true);
+		String found = lookup.find(text, scope, !namesPlayers(node.getType()));
 		if (found == null)
 		{
 			return false;
@@ -53,6 +56,51 @@ class ChatTranslator
 		int color = tag.isEmpty() ? defaultColor() : Integer.parseInt(m.group(1), 16);
 		node.setValue(tag + glyphs.toChatText(found, color, false));
 		return true;
+	}
+
+	/**
+	 * Translates an NPC's overhead line, drawn yellow with a shadow like the game's. Players'
+	 * overhead text is their own chat and is never touched.
+	 */
+	void translateOverhead(Actor actor, String text)
+	{
+		if (!(actor instanceof NPC) || text == null || text.contains("<img=") || actor.getName() == null)
+		{
+			return;
+		}
+		String name = GameTextLookup.plain(actor.getName());
+		String found = lookup.find(text, Scope.of("dialogue", name, name), true);
+		if (found != null)
+		{
+			actor.setOverheadText(glyphs.toChatText(found, OVERHEAD_YELLOW, true));
+		}
+	}
+
+	/** Messages about other players: translated through templates, never recorded. */
+	private static boolean namesPlayers(ChatMessageType type)
+	{
+		switch (type)
+		{
+			case BROADCAST:
+			case CLAN_MESSAGE:
+			case CLAN_GUEST_MESSAGE:
+			case CLAN_GIM_MESSAGE:
+			case FRIENDSCHATNOTIFICATION:
+			case LOGINLOGOUTNOTIFICATION:
+			case TRADEREQ:
+			case CHALREQ_TRADE:
+			case CHALREQ_FRIENDSCHAT:
+			case CHALREQ_CLANCHAT:
+			case PLAYERRELATED:
+			case TENSECTIMEOUT:
+			case CLAN_CREATION_INVITATION:
+			case CLAN_GIM_FORM_GROUP:
+			case CLAN_GIM_GROUP_WITH:
+			case TRADE:
+				return true;
+			default:
+				return false;
+		}
 	}
 
 	/** Where the message's text is found in the data, or null for messages we leave alone. */
@@ -83,7 +131,8 @@ class ChatTranslator
 			case DIDYOUKNOW:
 				return Scope.ANY;
 			default:
-				return null;
+				// System lines about other players, but never anything a player typed.
+				return namesPlayers(type) ? Scope.ANY : null;
 		}
 	}
 

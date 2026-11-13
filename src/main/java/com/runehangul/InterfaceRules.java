@@ -145,6 +145,14 @@ final class InterfaceRules
 			|| id == InterfaceID.Chatbox.SCROLLAREA;
 	}
 
+	/** Widgets whose menus are about another player: chat lines, friends, clan and channel lists. */
+	static boolean listsPlayers(Widget widget)
+	{
+		int group = widget.getId() >>> 16;
+		return group == InterfaceID.CHATBOX || group == InterfaceID.PM_CHAT || UNRECORDED_GROUPS.contains(group)
+			|| isPlayerText(widget, false);
+	}
+
 	static WidgetTexts.Request request(Widget widget, Scope context, boolean record)
 	{
 		int id = widget.getId();

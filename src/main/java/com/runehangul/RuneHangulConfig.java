@@ -9,6 +9,7 @@ public interface RuneHangulConfig extends Config
 {
 	String GROUP = "runehangul";
 	String LANGUAGE = "language";
+	String ORIGINAL_TOOLTIP = "originalTooltip";
 
 	@ConfigItem(
 		keyName = LANGUAGE,
@@ -18,5 +19,15 @@ public interface RuneHangulConfig extends Config
 	default Language language()
 	{
 		return Language.KOREAN;
+	}
+
+	@ConfigItem(
+		keyName = ORIGINAL_TOOLTIP,
+		name = "Show English on hover",
+		description = "Show the English of a translated menu option in a tooltip at the mouse."
+	)
+	default boolean originalTooltip()
+	{
+		return true;
 	}
 }

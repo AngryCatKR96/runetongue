@@ -3,6 +3,7 @@ package com.runehangul;
 import com.runehangul.text.Normalizer;
 import com.runehangul.text.TextLookup;
 import com.runehangul.text.Scope;
+import java.util.regex.Pattern;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import net.runelite.api.Client;
@@ -18,7 +19,10 @@ import net.runelite.client.util.Text;
 @Singleton
 class GameTextLookup
 {
-	private static final char NBSP = ' ';
+	private static final char NBSP = '\u00A0';
+	/** Spaces game or wiki text may use instead of a plain one (RuneLingual's replaceSpecialSpaces). */
+	private static final Pattern SPECIAL_SPACES = Pattern.compile("[\\t\\u00A0\\u2000-\\u200A\\u202F\\u205F\\u3000]");
+	private static final Pattern ZERO_WIDTH = Pattern.compile("[\\u200B-\\u200D\\uFEFF]");
 
 	private final Client client;
 	private final TranslationStore store;
@@ -50,7 +54,7 @@ class GameTextLookup
 	 */
 	String findKeepingTags(String shown, Scope scope, boolean keepBr, boolean record)
 	{
-		String english = shown.replace(NBSP, ' ');
+		String english = spaces(shown);
 		if (!keepBr)
 		{
 			english = english.replace(" <br>", " ").replace("<br> ", " ").replace("<br>", " ");
@@ -84,7 +88,12 @@ class GameTextLookup
 	/** Game text without tags; a {@code <br>} the game put in place of a space becomes a space again. */
 	static String plain(String shown)
 	{
-		return Text.removeTags(shown.replaceAll("(?<=\\S)<br>(?=\\S)", " ")).replace(NBSP, ' ').trim();
+		return spaces(Text.removeTags(shown.replaceAll("(?<=\\S)<br>(?=\\S)", " "))).trim();
+	}
+
+	private static String spaces(String text)
+	{
+		return ZERO_WIDTH.matcher(SPECIAL_SPACES.matcher(text).replaceAll(" ")).replaceAll("");
 	}
 
 	private String playerName()

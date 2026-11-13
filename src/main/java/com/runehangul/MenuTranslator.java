@@ -10,6 +10,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
+import net.runelite.api.Menu;
 import net.runelite.api.MenuAction;
 import net.runelite.api.MenuEntry;
 import net.runelite.client.util.Text;
@@ -29,6 +30,10 @@ class MenuTranslator
 	/** A target is a run of {@code <col=rrggbb>text} pieces, e.g. a name followed by its level. */
 	private static final Pattern PIECE = Pattern.compile("(<col=([0-9a-fA-F]{1,6})>)?([^<]+)|(<[^>]*>)");
 	private static final Pattern LEVEL = Pattern.compile("\\s*\\(level-\\d+\\)\\s*");
+	private static final Pattern LEVEL_ANYWHERE = Pattern.compile("\\(level-\\d+\\)");
+	private static final Scope LEVEL_SCOPE = Scope.of("name", "level", "");
+	private static final String MEMBERS = " (Members)";
+	private static final Scope MEMBERS_SCOPE = Scope.of("actions", "item", "");
 
 	private final Client client;
 	private final GlyphIcons glyphs;
@@ -53,30 +58,51 @@ class MenuTranslator
 		}
 		for (MenuEntry entry : client.getMenu().getMenuEntries())
 		{
-			if (entry.getType().name().startsWith("RUNELITE"))
+			translate(entry);
+			Menu sub = entry.getSubMenu();
+			if (sub != null)
 			{
-				// Added by a RuneLite plugin, not game text.
-				continue;
-			}
-			String option = entry.getOption();
-			String target = entry.getTarget();
-			if (originals.containsKey(option) || originals.containsKey(target))
-			{
-				continue;
-			}
-			Kind kind = Kind.of(entry);
-			String name = Text.removeTags(LEVEL.matcher(target).replaceAll("")).trim();
-			String newOption = cached(kind.ordinal() + "|" + name + "|" + option, option, () -> option(option, kind, name));
-			String newTarget = kind == Kind.PLAYER ? target : cached(kind.ordinal() + "|" + target, target, () -> target(target, kind));
-			if (!newOption.equals(option))
-			{
-				entry.setOption(newOption);
-			}
-			if (!newTarget.equals(target))
-			{
-				entry.setTarget(newTarget);
+				for (MenuEntry subEntry : sub.getMenuEntries())
+				{
+					translate(subEntry);
+				}
 			}
 		}
+	}
+
+	private void translate(MenuEntry entry)
+	{
+		String option = entry.getOption();
+		String target = entry.getTarget();
+		if (originals.containsKey(option) || originals.containsKey(target))
+		{
+			return;
+		}
+		// Added by a RuneLite plugin: the option may be translated, but it is not game text to record.
+		boolean byPlugin = entry.getType().name().startsWith("RUNELITE");
+		Kind kind = Kind.of(entry);
+		boolean player = kind == Kind.PLAYER || byPlugin
+			|| (entry.getType() == MenuAction.WALK && LEVEL_ANYWHERE.matcher(target).find())
+			|| (entry.getWidget() != null && InterfaceRules.listsPlayers(entry.getWidget()));
+		boolean record = !player;
+		String name = player ? "" : Text.removeTags(LEVEL.matcher(target).replaceAll("")).trim();
+		String newOption = cached(kind.ordinal() + "|" + player + "|" + name + "|" + option, option,
+			() -> option(option, kind, name, record));
+		String newTarget = cached(kind.ordinal() + "|" + player + "|" + target, target, () -> target(target, kind, player, record));
+		if (!newOption.equals(option))
+		{
+			entry.setOption(newOption);
+		}
+		if (!newTarget.equals(target))
+		{
+			entry.setTarget(newTarget);
+		}
+	}
+
+	/** The English of an option or target this translated, or null if it is not a translation. */
+	String originalOf(String text)
+	{
+		return originals.get(text);
 	}
 
 	/** Puts the English back on a clicked entry before other plugins read it. */
@@ -116,17 +142,24 @@ class MenuTranslator
 		return result;
 	}
 
-	private String option(String option, Kind kind, String targetName)
+	/** Options keep their color tags in the data ("<colNum0>Public:</col> Show friends"). */
+	private String option(String option, Kind kind, String targetName, boolean record)
 	{
-		String found = lookup.find(option, Scope.of(kind.category, kind.subCategory, targetName), true);
+		String found = lookup.findKeepingTags(option, Scope.of(kind.category, kind.subCategory, targetName), false, record);
 		return found == null ? option : glyphs.toChatText(found, WHITE, false);
 	}
 
-	/** Translates each name piece of the target; colors, levels and " -> " stay as they are. */
-	private String target(String target, Kind kind)
+	/**
+	 * Translates each name piece of the target, keeping its color. A level suffix gets the word
+	 * "level" translated; a player's name, and the player after "Use X ->", stay as they are. The
+	 * piece before " -> " is the item being used.
+	 */
+	private String target(String target, Kind kind, boolean player, boolean record)
 	{
 		StringBuilder out = new StringBuilder();
 		boolean changed = false;
+		boolean hasArrow = target.contains("->");
+		boolean afterArrow = false;
 		Matcher m = PIECE.matcher(target);
 		while (m.find())
 		{
@@ -138,20 +171,55 @@ class MenuTranslator
 			String tag = m.group(1) == null ? "" : m.group(1);
 			String text = m.group(3);
 			int color = m.group(2) == null ? WHITE : Integer.parseInt(m.group(2), 16);
-			String name = text.trim();
-			String found = name.isEmpty() || LEVEL.matcher(text).matches() || name.equals("->")
-				? null : lookup.find(name, Scope.of("name", kind.nameSubCategory, ""), true);
-			if (found == null)
+			String translated = null;
+			if (text.contains("->"))
 			{
-				out.append(tag).append(text);
-				continue;
+				afterArrow = true;
 			}
-			changed = true;
-			String lead = text.substring(0, text.indexOf(name));
-			String trail = text.substring(text.indexOf(name) + name.length());
-			out.append(tag).append(lead).append(glyphs.toChatText(found, color, false)).append(trail);
+			else if (LEVEL.matcher(text).matches())
+			{
+				translated = level(text, color);
+			}
+			else if (!(player && (!hasArrow || afterArrow)) && !text.trim().isEmpty())
+			{
+				String sub = hasArrow && !afterArrow ? "item" : kind.nameSubCategory;
+				translated = name(text, sub, color, record);
+			}
+			changed |= translated != null;
+			out.append(tag).append(translated != null ? translated : text);
 		}
 		return changed ? out.toString() : target;
+	}
+
+	/** "  (level-15)" with the word "level" translated; the digits and spacing stay. */
+	private String level(String text, int color)
+	{
+		String word = lookup.find("level", LEVEL_SCOPE, false);
+		return word == null ? null : glyphs.toChatText(text.replace("level", word), color, false);
+	}
+
+	/** A name, keeping the spaces around it; "Name (Members)" is translated in two parts. */
+	private String name(String text, String subCategory, int color, boolean record)
+	{
+		String name = text.trim();
+		String suffix = "";
+		if (name.endsWith(MEMBERS) && name.length() > MEMBERS.length())
+		{
+			String members = lookup.find(MEMBERS.trim(), MEMBERS_SCOPE, false);
+			if (members != null)
+			{
+				suffix = " " + members;
+				name = name.substring(0, name.length() - MEMBERS.length());
+			}
+		}
+		String found = lookup.find(name, Scope.of("name", subCategory, ""), record);
+		if (found == null)
+		{
+			return null;
+		}
+		String lead = text.substring(0, text.indexOf(text.trim()));
+		String trail = text.substring(text.indexOf(text.trim()) + text.trim().length());
+		return lead + glyphs.toChatText(found + suffix, color, false) + trail;
 	}
 
 	private static <V> Map<String, V> lru()
