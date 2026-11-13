@@ -1,9 +1,7 @@
 package com.runehangul;
 
 import com.runehangul.glyph.GlyphIcons;
-import com.runehangul.text.Normalizer;
 import com.runehangul.text.Scope;
-import com.runehangul.text.SourceText;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -34,24 +32,22 @@ class MenuTranslator
 
 	private final Client client;
 	private final GlyphIcons glyphs;
-	private final TranslationStore store;
-	private final MissingTexts missing;
+	private final GameTextLookup lookup;
 	/** Translated text by original, for options and targets alike; also tells our own output apart. */
 	private final Map<String, String> translated = lru();
 	private final Map<String, String> originals = lru();
 
 	@Inject
-	MenuTranslator(Client client, GlyphIcons glyphs, TranslationStore store, MissingTexts missing)
+	MenuTranslator(Client client, GlyphIcons glyphs, GameTextLookup lookup)
 	{
 		this.client = client;
 		this.glyphs = glyphs;
-		this.store = store;
-		this.missing = missing;
+		this.lookup = lookup;
 	}
 
 	void update()
 	{
-		if (!store.isLoaded())
+		if (!lookup.isReady())
 		{
 			return;
 		}
@@ -122,8 +118,7 @@ class MenuTranslator
 
 	private String option(String option, Kind kind, String targetName)
 	{
-		String english = Text.removeTags(option).trim();
-		String found = lookup(english, Scope.of(kind.category, kind.subCategory, targetName));
+		String found = lookup.find(option, Scope.of(kind.category, kind.subCategory, targetName), true);
 		return found == null ? option : glyphs.toChatText(found, WHITE, false);
 	}
 
@@ -145,7 +140,7 @@ class MenuTranslator
 			int color = m.group(2) == null ? WHITE : Integer.parseInt(m.group(2), 16);
 			String name = text.trim();
 			String found = name.isEmpty() || LEVEL.matcher(text).matches() || name.equals("->")
-				? null : lookup(name, Scope.of("name", kind.nameSubCategory, ""));
+				? null : lookup.find(name, Scope.of("name", kind.nameSubCategory, ""), true);
 			if (found == null)
 			{
 				out.append(tag).append(text);
@@ -157,22 +152,6 @@ class MenuTranslator
 			out.append(tag).append(lead).append(glyphs.toChatText(found, color, false)).append(trail);
 		}
 		return changed ? out.toString() : target;
-	}
-
-	private String lookup(String english, Scope scope)
-	{
-		if (english.isEmpty())
-		{
-			return null;
-		}
-		SourceText source = Normalizer.normalizeSource(english);
-		String found = store.get().find(source.getKey(), scope);
-		if (found == null)
-		{
-			missing.record(source.getKey(), scope);
-			return null;
-		}
-		return Normalizer.restore(found, source);
 	}
 
 	private static <V> Map<String, V> lru()

@@ -69,25 +69,61 @@ public class GlyphIcons
 		return renderer.render(codePoint, color);
 	}
 
+	/**
+	 * Tags pass through unchanged; a {@code <col=rrggbb>} tag switches the color glyphs are drawn
+	 * in until its {@code </col>}, as the game does for its own font.
+	 */
 	private String toMarkup(String text, Color textColor, Color shadow)
 	{
 		StringBuilder out = new StringBuilder(text.length() * 8);
-		text.codePoints().forEach(cp ->
+		Color color = textColor;
+		for (int i = 0; i < text.length(); )
 		{
+			int cp = text.codePointAt(i);
+			int end = cp == '<' ? text.indexOf('>', i) : -1;
+			if (end > 0)
+			{
+				String tag = text.substring(i, end + 1);
+				out.append(tag);
+				if (tag.startsWith("<col=") && tag.length() > 6)
+				{
+					color = colorOf(tag.substring(5, tag.length() - 1), color);
+				}
+				else if (tag.equals("</col>"))
+				{
+					color = textColor;
+				}
+				i = end + 1;
+				continue;
+			}
 			if (isGameChar(cp))
 			{
 				out.appendCodePoint(cp);
 			}
 			else if (renderer.canDisplay(cp))
 			{
-				out.append("<img=").append(chatIconManager.chatIconIndex(iconId(cp, textColor, shadow))).append('>');
+				out.append("<img=").append(chatIconManager.chatIconIndex(iconId(cp, color, shadow))).append('>');
 			}
 			else
 			{
 				out.append('?');
 			}
-		});
+			i += Character.charCount(cp);
+		}
 		return out.toString();
+	}
+
+	private static Color colorOf(String hex, Color fallback)
+	{
+		try
+		{
+			int rgb = Integer.parseInt(hex, 16) & 0xFFFFFF;
+			return new Color(rgb == 0 ? NEAR_BLACK : rgb);
+		}
+		catch (NumberFormatException e)
+		{
+			return fallback;
+		}
 	}
 
 	private boolean isGameChar(int codePoint)

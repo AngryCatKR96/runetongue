@@ -23,6 +23,7 @@ import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.events.BeforeRender;
+import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.CommandExecuted;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.MenuOpened;
@@ -76,6 +77,15 @@ public class RuneHangulPlugin extends Plugin
 	private MenuTranslator menu;
 
 	@Inject
+	private InterfaceTranslator interfaces;
+
+	@Inject
+	private ChatTranslator chatTranslator;
+
+	@Inject
+	private WidgetTexts widgetTexts;
+
+	@Inject
 	private ClientToolbar clientToolbar;
 
 	@Inject
@@ -110,6 +120,7 @@ public class RuneHangulPlugin extends Plugin
 		missing.stop();
 		dialogue.reset();
 		menu.reset();
+		widgetTexts.reset();
 		clientToolbar.removeNavigation(navButton);
 		navButton = null;
 		panel = null;
@@ -123,7 +134,6 @@ public class RuneHangulPlugin extends Plugin
 		if (RuneHangulConfig.GROUP.equals(event.getGroup()) && RuneHangulConfig.LANGUAGE.equals(event.getKey()))
 		{
 			missing.start(this::missingFolder);
-			dialogue.reset();
 			reload(true);
 		}
 	}
@@ -132,7 +142,18 @@ public class RuneHangulPlugin extends Plugin
 	public void onBeforeRender(BeforeRender event)
 	{
 		dialogue.update();
+		interfaces.update();
 		menu.update();
+	}
+
+	/** Late, so other plugins see the English message first. */
+	@Subscribe(priority = -100)
+	public void onChatMessage(ChatMessage event)
+	{
+		if (chatTranslator.translate(event.getMessageNode()))
+		{
+			client.refreshChat();
+		}
 	}
 
 	/** Late, so the menu is translated after other plugins have changed it. */
@@ -205,6 +226,8 @@ public class RuneHangulPlugin extends Plugin
 			clientThread.invoke(() ->
 			{
 				menu.reset();
+				widgetTexts.reset();
+				dialogue.reset();
 				if (announce || client.getGameState() == GameState.LOGGED_IN)
 				{
 					announce(report);
