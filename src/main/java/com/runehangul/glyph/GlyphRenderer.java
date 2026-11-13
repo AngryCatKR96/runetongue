@@ -1,5 +1,6 @@
 package com.runehangul.glyph;
 
+import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontFormatException;
 import java.awt.Graphics2D;
@@ -56,9 +57,21 @@ public final class GlyphRenderer
 
 	public BufferedImage render(int codePoint, GlyphColor color)
 	{
+		return render(codePoint, color.getText(), color.getShadow());
+	}
+
+	/** Width in pixels of the image {@link #render} makes for this code point. */
+	public int width(int codePoint)
+	{
+		return width(font.createGlyphVector(frc, new String(Character.toChars(codePoint))));
+	}
+
+	/** Draws one glyph; {@code shadow} may be null. */
+	public BufferedImage render(int codePoint, Color textColor, Color shadow)
+	{
 		String text = new String(Character.toChars(codePoint));
 		GlyphVector glyph = font.createGlyphVector(frc, text);
-		int width = Math.max(1, (int) Math.ceil(glyph.getGlyphMetrics(0).getAdvanceX()));
+		int width = width(glyph);
 		int bottom = (int) Math.ceil(baseline + glyph.getVisualBounds().getMaxY());
 		int height = Math.max(MIN_HEIGHT, bottom);
 
@@ -69,12 +82,12 @@ public final class GlyphRenderer
 			g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
 			g.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_OFF);
 			g.setFont(font);
-			if (color.getShadow() != null)
+			if (shadow != null)
 			{
-				g.setColor(color.getShadow());
+				g.setColor(shadow);
 				g.drawString(text, 1, baseline + 1);
 			}
-			g.setColor(color.getText());
+			g.setColor(textColor);
 			g.drawString(text, 0, baseline);
 		}
 		finally
@@ -82,5 +95,10 @@ public final class GlyphRenderer
 			g.dispose();
 		}
 		return image;
+	}
+
+	private static int width(GlyphVector glyph)
+	{
+		return Math.max(1, (int) Math.ceil(glyph.getGlyphMetrics(0).getAdvanceX()));
 	}
 }

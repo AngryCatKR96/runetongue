@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
+import net.runelite.api.events.BeforeRender;
 import net.runelite.api.events.CommandExecuted;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.client.callback.ClientThread;
@@ -63,6 +64,9 @@ public class RuneHangulPlugin extends Plugin
 	private TranslationStore store;
 
 	@Inject
+	private DialogueTranslator dialogue;
+
+	@Inject
 	private ClientToolbar clientToolbar;
 
 	@Inject
@@ -92,6 +96,7 @@ public class RuneHangulPlugin extends Plugin
 	protected void shutDown() throws Exception
 	{
 		store.stop();
+		dialogue.reset();
 		clientToolbar.removeNavigation(navButton);
 		navButton = null;
 		panel = null;
@@ -106,6 +111,12 @@ public class RuneHangulPlugin extends Plugin
 		{
 			reload(true);
 		}
+	}
+
+	@Subscribe
+	public void onBeforeRender(BeforeRender event)
+	{
+		dialogue.update();
 	}
 
 	@Subscribe

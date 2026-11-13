@@ -1,5 +1,6 @@
 package com.runehangul.glyph;
 
+import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
@@ -7,10 +8,11 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import net.runelite.api.FontTypeFace;
 import net.runelite.client.game.ChatIconManager;
 
 /**
- * Turns text into chat markup the game can draw, replacing characters its fonts lack with
+ * Turns text into markup the game can draw, replacing characters its fonts lack with
  * {@code <img=N>} tags. Glyph images are drawn and registered on first use. Chat icons cannot be
  * unregistered, so this is a singleton that keeps them across plugin restarts.
  * Must be called on the client thread.
@@ -18,10 +20,15 @@ import net.runelite.client.game.ChatIconManager;
 @Singleton
 public class GlyphIcons
 {
+	/** ImageUtil.getImageIndexedSprite turns opaque 0x000000 into the transparent palette slot. */
+	private static final int NEAR_BLACK = 0x010101;
+	private static final Color SHADOW = new Color(NEAR_BLACK);
+
 	private final ChatIconManager chatIconManager;
 	private final GlyphRenderer renderer;
 	private final CharsetEncoder gameCharset = Charset.forName("windows-1252").newEncoder();
 	private final Map<Long, Integer> iconIds = new HashMap<>();
+	private final Map<Integer, Integer> widths = new HashMap<>();
 
 	@Inject
 	GlyphIcons(ChatIconManager chatIconManager)
@@ -32,16 +39,48 @@ public class GlyphIcons
 
 	public String toChatText(String text, GlyphColor color)
 	{
+		return toMarkup(text, color.getText(), color.getShadow());
+	}
+
+	/** Markup for a widget whose text is drawn in {@code rgb}, with the game's drop shadow if {@code shadowed}. */
+	public String toChatText(String text, int rgb, boolean shadowed)
+	{
+		int visible = (rgb & 0xFFFFFF) == 0 ? NEAR_BLACK : rgb & 0xFFFFFF;
+		return toMarkup(text, new Color(visible), shadowed ? SHADOW : null);
+	}
+
+	/** Width in pixels of one character as {@link #toChatText} would draw it in {@code font}. */
+	public int width(int codePoint, FontTypeFace font)
+	{
+		if (isGameChar(codePoint))
+		{
+			return font.getTextWidth(new String(Character.toChars(codePoint)));
+		}
+		if (renderer.canDisplay(codePoint))
+		{
+			return widths.computeIfAbsent(codePoint, renderer::width);
+		}
+		return font.getTextWidth("?");
+	}
+
+	/** Draws one glyph without registering it; safe on any thread. */
+	public BufferedImage image(int codePoint, GlyphColor color)
+	{
+		return renderer.render(codePoint, color);
+	}
+
+	private String toMarkup(String text, Color textColor, Color shadow)
+	{
 		StringBuilder out = new StringBuilder(text.length() * 8);
 		text.codePoints().forEach(cp ->
 		{
-			if (cp < 0x10000 && gameCharset.canEncode((char) cp))
+			if (isGameChar(cp))
 			{
 				out.appendCodePoint(cp);
 			}
 			else if (renderer.canDisplay(cp))
 			{
-				out.append("<img=").append(chatIconManager.chatIconIndex(iconId(cp, color))).append('>');
+				out.append("<img=").append(chatIconManager.chatIconIndex(iconId(cp, textColor, shadow))).append('>');
 			}
 			else
 			{
@@ -51,19 +90,18 @@ public class GlyphIcons
 		return out.toString();
 	}
 
-	/** Draws one glyph without registering it; safe on any thread. */
-	public BufferedImage image(int codePoint, GlyphColor color)
+	private boolean isGameChar(int codePoint)
 	{
-		return renderer.render(codePoint, color);
+		return codePoint < 0x10000 && gameCharset.canEncode((char) codePoint);
 	}
 
-	private int iconId(int codePoint, GlyphColor color)
+	private int iconId(int codePoint, Color textColor, Color shadow)
 	{
-		long key = ((long) codePoint << 8) | color.ordinal();
+		long key = ((long) codePoint << 25) | ((long) (textColor.getRGB() & 0xFFFFFF) << 1) | (shadow != null ? 1 : 0);
 		return iconIds.computeIfAbsent(key, k ->
 		{
 			int id = chatIconManager.reserveChatIcon();
-			chatIconManager.updateChatIcon(id, renderer.render(codePoint, color));
+			chatIconManager.updateChatIcon(id, renderer.render(codePoint, textColor, shadow));
 			return id;
 		});
 	}
