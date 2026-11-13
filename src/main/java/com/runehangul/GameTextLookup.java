@@ -1,8 +1,8 @@
 package com.runehangul;
 
 import com.runehangul.text.Normalizer;
+import com.runehangul.text.TextLookup;
 import com.runehangul.text.Scope;
-import com.runehangul.text.SourceText;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import net.runelite.api.Client;
@@ -69,17 +69,15 @@ class GameTextLookup
 		{
 			english = english.replace(player, Normalizer.PLAYER_NAME);
 		}
-		SourceText source = Normalizer.normalizeSource(english);
-		String found = store.get().find(source.getKey(), scope);
-		if (found == null)
+		String text = TextLookup.translate(store.get(), english, scope);
+		if (text == null)
 		{
 			if (record && store.isLoaded())
 			{
-				missing.record(source.getKey(), scope);
+				missing.record(Normalizer.normalizeSource(english).getKey(), scope);
 			}
 			return null;
 		}
-		String text = Normalizer.restore(found, source);
 		return player == null ? text : text.replace(Normalizer.PLAYER_NAME, player);
 	}
 

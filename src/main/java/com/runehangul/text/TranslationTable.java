@@ -1,8 +1,10 @@
 package com.runehangul.text;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -27,6 +29,7 @@ public final class TranslationTable
 	}
 
 	private final Map<String, Candidate[]> byEnglish = new HashMap<>();
+	private final List<PartialTemplate> templates = new ArrayList<>();
 	private final int size;
 
 	/** Later entries win, so pass files in name order and lines in file order. */
@@ -56,6 +59,19 @@ public final class TranslationTable
 			count++;
 		}
 		size = count;
+		for (String english : byEnglish.keySet())
+		{
+			if (PartialTemplate.isTemplate(english))
+			{
+				templates.add(PartialTemplate.of(english));
+			}
+		}
+	}
+
+	/** Lines with {@code <!TYPEn>} slots (see {@link PartialTemplate}). */
+	public List<PartialTemplate> templates()
+	{
+		return Collections.unmodifiableList(templates);
 	}
 
 	/**
@@ -88,6 +104,12 @@ public final class TranslationTable
 	 */
 	public String relaxed(String english, Scope scope)
 	{
+		return relaxed(english, scope, false);
+	}
+
+	/** {@link #relaxed}, optionally only among lines with the asked category and sub_category. */
+	public String relaxed(String english, Scope scope, boolean sameSubCategory)
+	{
 		Candidate[] candidates = byEnglish.get(english);
 		if (candidates == null)
 		{
@@ -95,6 +117,10 @@ public final class TranslationTable
 		}
 		for (Scope level : scope.widening())
 		{
+			if (sameSubCategory && level.getSubCategory().isEmpty())
+			{
+				break;
+			}
 			for (int i = candidates.length - 1; i >= 0; i--)
 			{
 				if (candidates[i].scope.isWithin(level))

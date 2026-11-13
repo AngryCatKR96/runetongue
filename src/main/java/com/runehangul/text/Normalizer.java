@@ -18,7 +18,7 @@ public final class Normalizer
 		"(?<num><Num(?<numIdx>\\d+)>)"
 			+ "|(?<colnum><colNum(?<colIdx>\\d+)>)"
 			+ "|(?<col><col[=A-Za-z0-9]*>)"
-			+ "|(?<tag><[^<>\\s]{1,15}>)"
+			+ "|(?<tag><![A-Z_]+\\d+>|<[^<>\\s]{1,15}>)"
 			+ "|(?<digits>\\d+(?:[.,]\\d+)*)");
 	private static final Pattern PLACEHOLDER = Pattern.compile("<Num\\d+>|<colNum\\d+>|" + Pattern.quote(PLAYER_NAME));
 
