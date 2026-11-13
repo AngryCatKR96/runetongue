@@ -8,7 +8,8 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum Language
 {
-	KOREAN("ko", "한국어 (Korean)", "/com/runehangul/translations_ko.tsv.gz"),
+	// Shown in RuneLite's config dropdown, which draws with the RuneScape font: no Hangul there.
+	KOREAN("ko", "Korean", "/com/runehangul/translations_ko.tsv.gz"),
 	SPANISH("es", "Español (Spanish)", null),
 	PORTUGUESE("pt", "Português (Portuguese)", null),
 	FRENCH("fr", "Français (French)", null),
