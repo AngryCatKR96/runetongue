@@ -239,6 +239,7 @@ public class RuneHangulPlugin extends Plugin
 		store.reload(this::folder, config.language(), report ->
 		{
 			SwingUtilities.invokeLater(() -> target.show(report));
+			missing.prune(store.get(), lines -> SwingUtilities.invokeLater(() -> target.showMissing(lines)));
 			clientThread.invoke(() ->
 			{
 				menu.reset();

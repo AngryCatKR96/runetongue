@@ -1,15 +1,20 @@
 package com.runehangul;
 
 import com.runehangul.text.Scope;
+import com.runehangul.text.TextLookup;
+import com.runehangul.text.Translations;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.IntConsumer;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import lombok.extern.slf4j.Slf4j;
@@ -76,6 +81,70 @@ class MissingTexts
 	void stop()
 	{
 		session = null;
+	}
+
+	/**
+	 * Drops the lines that {@code translations} now translates, e.g. after a translated copy was
+	 * put in the translations folder, and reports how many lines are left. Runs on the executor,
+	 * after any writes already queued, since RuneLite's executor has a single thread.
+	 */
+	void prune(Translations translations, IntConsumer remaining)
+	{
+		Session s = session;
+		if (s == null)
+		{
+			return;
+		}
+		executor.execute(() ->
+		{
+			try
+			{
+				if (s.file == null || !s.file.exists())
+				{
+					remaining.accept(0);
+					return;
+				}
+				List<String> kept = new ArrayList<>();
+				int dropped = 0;
+				try (BufferedReader in = s.file.openBufferedReader())
+				{
+					for (String line : (Iterable<String>) in.lines().skip(1)::iterator)
+					{
+						if (line.isEmpty())
+						{
+							continue;
+						}
+						if (isTranslated(translations, line))
+						{
+							dropped++;
+						}
+						else
+						{
+							kept.add(line);
+						}
+					}
+				}
+				if (dropped > 0)
+				{
+					StringBuilder out = new StringBuilder(HEADER);
+					kept.forEach(line -> out.append(line).append('\n'));
+					s.file.write(out.toString().getBytes(StandardCharsets.UTF_8));
+					log.debug("dropped {} now translated lines from {}", dropped, s.file);
+				}
+				remaining.accept(kept.size());
+			}
+			catch (IOException e)
+			{
+				log.warn("could not tidy the missing text file", e);
+			}
+		});
+	}
+
+	private static boolean isTranslated(Translations translations, String line)
+	{
+		String[] c = line.split("\t", -1);
+		Scope scope = Scope.of(c.length > 2 ? c[2] : "", c.length > 3 ? c[3] : "", c.length > 4 ? c[4] : "");
+		return TextLookup.translate(translations, c[0], scope) != null;
 	}
 
 	/** Client thread. {@code english} is the normalized lookup key. */

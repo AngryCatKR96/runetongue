@@ -2,6 +2,8 @@ package com.runehangul;
 
 import static org.junit.Assert.assertEquals;
 import com.runehangul.text.Scope;
+import com.runehangul.text.TranslationTable;
+import com.runehangul.text.Translations;
 import com.runehangul.text.TsvParser;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -10,6 +12,7 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import net.runelite.client.util.Filepath;
 import org.junit.Test;
 
@@ -56,5 +59,26 @@ public class MissingTextsTest
 		byte[] bytes = Files.readAllBytes(dir.resolve(MissingTexts.FILE_NAME));
 		assertEquals(2, TsvParser.parse(bytes).getUntranslated());
 		assertEquals(List.of(), TsvParser.parse(bytes).getSkipped());
+	}
+
+	@Test
+	public void dropsLinesThatAreNowTranslated() throws Exception
+	{
+		Path dir = Files.createTempDirectory("missing");
+		session(dir, "Hello there.", "You have <Num0> coins.");
+		Translations translated = new Translations(new TranslationTable(TsvParser.parse(
+			"You have 5 coins.\t코인이 5개 있어요.\tdialogue\n".getBytes(StandardCharsets.UTF_8)).getEntries()), TranslationTable.EMPTY);
+
+		ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+		MissingTexts missing = new MissingTexts(executor);
+		missing.start(() -> Filepath.Unchecked.getRooted(dir));
+		AtomicInteger left = new AtomicInteger(-1);
+		missing.prune(translated, left::set);
+		executor.shutdown();
+		executor.awaitTermination(5, TimeUnit.SECONDS);
+
+		assertEquals(1, left.get());
+		assertEquals(List.of("english\ttranslation\tcategory\tsub_category\tsource", "Hello there.\t\tdialogue\tHans\tHans"),
+			Files.readAllLines(dir.resolve(MissingTexts.FILE_NAME), StandardCharsets.UTF_8));
 	}
 }

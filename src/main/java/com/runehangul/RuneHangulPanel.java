@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import net.runelite.client.ui.ColorScheme;
@@ -24,6 +25,7 @@ class RuneHangulPanel extends PluginPanel
 	private static final Font FONT = FontManager.getDefaultFont().deriveFont(12f);
 
 	private final JTextArea report = new JTextArea("불러오는 중…");
+	private final JLabel missing = new JLabel(" ");
 
 	RuneHangulPanel(Runnable openFolder, Consumer<List<Filepath>> addFiles, Runnable reload, Runnable openMissingFolder)
 	{
@@ -34,6 +36,8 @@ class RuneHangulPanel extends PluginPanel
 		buttons.add(button("파일 추가", () -> chooseFiles(addFiles)));
 		buttons.add(button("다시 불러오기", reload));
 		buttons.add(button("빠진 문장 폴더 열기", openMissingFolder));
+		missing.setFont(FONT);
+		buttons.add(missing);
 		add(buttons, BorderLayout.NORTH);
 
 		report.setFont(FONT);
@@ -48,6 +52,12 @@ class RuneHangulPanel extends PluginPanel
 	{
 		report.setText(describe(loaded));
 		report.setCaretPosition(0);
+	}
+
+	/** How many lines are waiting in missing/<lang>/missing.tsv. */
+	void showMissing(int lines)
+	{
+		missing.setText("빠진 문장 " + lines + "줄 모임 (번역하면 자동으로 지워짐)");
 	}
 
 	void showMessage(String message)
