@@ -8,8 +8,15 @@ import com.runehangul.text.ParseResult;
 import com.runehangul.text.Scope;
 import com.runehangul.text.SkipReason;
 import com.runehangul.text.SourceText;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.ScheduledExecutorService;
 import javax.inject.Inject;
+import javax.swing.SwingUtilities;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
@@ -21,6 +28,10 @@ import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.ClientToolbar;
+import net.runelite.client.ui.NavigationButton;
+import net.runelite.client.util.Filepath;
+import net.runelite.client.util.LinkBrowser;
 
 @Slf4j
 @PluginDescriptor(
@@ -33,6 +44,7 @@ public class RuneHangulPlugin extends Plugin
 {
 	private static final String GLYPH_SAMPLE = "다람쥐 헌 쳇바퀴에 타고파, Lumbridge(럼브리지) 1,234gp 똠";
 	private static final int SKIPPED_LINES_IN_CHAT = 5;
+	private static final int ICON_SIZE = 16;
 
 	@Inject
 	private Client client;
@@ -49,9 +61,26 @@ public class RuneHangulPlugin extends Plugin
 	@Inject
 	private TranslationStore store;
 
+	@Inject
+	private ClientToolbar clientToolbar;
+
+	@Inject
+	private ScheduledExecutorService executor;
+
+	private RuneHangulPanel panel;
+	private NavigationButton navButton;
+
 	@Override
 	protected void startUp() throws Exception
 	{
+		panel = new RuneHangulPanel(this::openFolder, this::addFiles, () -> reload(true));
+		navButton = NavigationButton.builder()
+			.tooltip("RuneHangul")
+			.icon(icon())
+			.priority(10)
+			.panel(panel)
+			.build();
+		clientToolbar.addNavigation(navButton);
 		log.debug("RuneHangul started");
 		reload(false);
 	}
@@ -60,6 +89,9 @@ public class RuneHangulPlugin extends Plugin
 	protected void shutDown() throws Exception
 	{
 		store.stop();
+		clientToolbar.removeNavigation(navButton);
+		navButton = null;
+		panel = null;
 		log.debug("RuneHangul stopped");
 	}
 
@@ -96,27 +128,100 @@ public class RuneHangulPlugin extends Plugin
 		}
 	}
 
+	private Filepath folder() throws IOException
+	{
+		return getPluginDirectory().join("translations", config.language().getCode());
+	}
+
 	private void reload(boolean announce)
 	{
-		store.reload(this::getPluginDirectory, config.language(), report -> clientThread.invoke(() ->
+		RuneHangulPanel target = panel;
+		if (target == null)
 		{
-			if (announce || client.getGameState() == GameState.LOGGED_IN)
+			return;
+		}
+		store.reload(this::folder, config.language(), report ->
+		{
+			SwingUtilities.invokeLater(() -> target.show(report));
+			clientThread.invoke(() ->
 			{
-				announce(report);
+				if (announce || client.getGameState() == GameState.LOGGED_IN)
+				{
+					announce(report);
+				}
+			});
+		});
+	}
+
+	private void openFolder()
+	{
+		executor.execute(() ->
+		{
+			try
+			{
+				Filepath dir = folder();
+				dir.createDirectories();
+				LinkBrowser.open(dir.toString());
 			}
-		}));
+			catch (IOException e)
+			{
+				log.warn("could not open translation folder", e);
+				showMessage("폴더를 열지 못했어요: " + e.getMessage());
+			}
+		});
+	}
+
+	private void addFiles(List<Filepath> chosen)
+	{
+		executor.execute(() ->
+		{
+			try
+			{
+				Filepath dir = folder();
+				dir.createDirectories();
+				for (Filepath file : chosen)
+				{
+					if (!dir.equals(file.getParent()))
+					{
+						file.copyTo(dir.join(file.getFileName()), StandardCopyOption.REPLACE_EXISTING);
+					}
+				}
+				reload(true);
+			}
+			catch (IOException e)
+			{
+				log.warn("could not copy translation files", e);
+				showMessage("파일을 복사하지 못했어요: " + e.getMessage());
+			}
+		});
+	}
+
+	private void showMessage(String message)
+	{
+		RuneHangulPanel target = panel;
+		if (target != null)
+		{
+			SwingUtilities.invokeLater(() -> target.showMessage(message));
+		}
+	}
+
+	private BufferedImage icon()
+	{
+		BufferedImage glyph = glyphIcons.image('한', GlyphColor.ORANGE);
+		BufferedImage icon = new BufferedImage(ICON_SIZE, ICON_SIZE, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g = icon.createGraphics();
+		g.drawImage(glyph, (ICON_SIZE - glyph.getWidth()) / 2, (ICON_SIZE - glyph.getHeight()) / 2, null);
+		g.dispose();
+		return icon;
 	}
 
 	private void announce(LoadReport report)
 	{
+		say(report.summary());
 		if (report.getError() != null)
 		{
-			say("번역 폴더를 읽지 못했어요: " + report.getError());
 			return;
 		}
-		say(String.format("%s 파일 %d개, %d줄 불러옴, %d줄 건너뜀, 미번역 %d줄 (내장 번역 %d개)",
-			report.getLanguage().getCode(), report.getFiles().size(), report.loadedLines(),
-			report.skippedLines(), report.untranslatedLines(), report.getBundledEntries()));
 		int shown = 0;
 		for (LoadReport.FileReport file : report.getFiles())
 		{

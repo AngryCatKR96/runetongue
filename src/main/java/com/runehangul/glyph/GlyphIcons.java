@@ -1,5 +1,6 @@
 package com.runehangul.glyph;
 
+import java.awt.image.BufferedImage;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.util.HashMap;
@@ -48,6 +49,12 @@ public class GlyphIcons
 			}
 		});
 		return out.toString();
+	}
+
+	/** Draws one glyph without registering it; safe on any thread. */
+	public BufferedImage image(int codePoint, GlyphColor color)
+	{
+		return renderer.render(codePoint, color);
 	}
 
 	private int iconId(int codePoint, GlyphColor color)

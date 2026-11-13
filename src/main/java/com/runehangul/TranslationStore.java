@@ -50,13 +50,13 @@ public class TranslationStore
 		return translations;
 	}
 
-	public synchronized void reload(Callable<Filepath> pluginDirectory, Language language, Consumer<LoadReport> onDone)
+	public synchronized void reload(Callable<Filepath> folder, Language language, Consumer<LoadReport> onDone)
 	{
 		cancelPending();
 		int current = ++generation;
 		pending = executor.submit(() ->
 		{
-			LoadReport report = load(pluginDirectory, language, current);
+			LoadReport report = load(folder, language, current);
 			if (report != null)
 			{
 				onDone.accept(report);
@@ -80,18 +80,18 @@ public class TranslationStore
 		}
 	}
 
-	private LoadReport load(Callable<Filepath> pluginDirectory, Language language, int current)
+	private LoadReport load(Callable<Filepath> folder, Language language, int current)
 	{
 		long start = System.nanoTime();
 		TranslationTable bundledTable = bundledFor(language);
 		List<LoadReport.FileReport> files = new ArrayList<>();
-		String folder = "";
+		String folderName = "";
 		String error = null;
 		try
 		{
-			Filepath dir = pluginDirectory.call().join("translations", language.getCode());
+			Filepath dir = folder.call();
 			dir.createDirectories();
-			folder = dir.toString();
+			folderName = dir.toString();
 			for (Filepath file : tsvFiles(dir))
 			{
 				if (Thread.currentThread().isInterrupted())
@@ -126,7 +126,7 @@ public class TranslationStore
 		}
 		log.debug("loaded {} user files and {} bundled entries for {} in {} ms",
 			files.size(), bundledTable.size(), language, (System.nanoTime() - start) / 1_000_000);
-		return new LoadReport(language, folder, files, bundledTable.size(), error);
+		return new LoadReport(language, folderName, files, bundledTable.size(), error);
 	}
 
 	private static List<Filepath> tsvFiles(Filepath dir) throws IOException
