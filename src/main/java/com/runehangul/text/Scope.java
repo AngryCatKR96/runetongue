@@ -25,6 +25,14 @@ public class Scope
 		return c.isEmpty() ? ANY : new Scope(c, s, o);
 	}
 
+	/** True when every field set in {@code level} matches this scope's; unset fields match anything. */
+	public boolean isWithin(Scope level)
+	{
+		return (level.category.isEmpty() || level.category.equals(category))
+			&& (level.subCategory.isEmpty() || level.subCategory.equals(subCategory))
+			&& (level.source.isEmpty() || level.source.equals(source));
+	}
+
 	/** This scope and each broader one, most specific first, ending with {@link #ANY}. */
 	public List<Scope> widening()
 	{

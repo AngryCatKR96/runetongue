@@ -9,38 +9,71 @@ import org.junit.Test;
 
 public class TranslationsTest
 {
-	private static List<Entry> file(String text)
+	private static TranslationTable table(String text)
 	{
-		return TsvParser.parse(text.getBytes(StandardCharsets.UTF_8)).getEntries();
+		return new TranslationTable(TsvParser.parse(text.getBytes(StandardCharsets.UTF_8)).getEntries());
 	}
 
-	private static final Scope DIALOGUE = Scope.of("dialogue", "Hans", "Hans");
+	private static Translations bundledOnly(String text)
+	{
+		return new Translations(TranslationTable.EMPTY, table(text));
+	}
+
+	private static final Scope HANS = Scope.of("dialogue", "Hans", "Hans");
 
 	@Test
 	public void mostSpecificScopeWinsWithinALayer()
 	{
-		TranslationTable t = new TranslationTable(file("Hello.\t안녕.\nHello.\t안녕하시오.\tdialogue\tHans\nHello.\t안녕하세요.\tactions\n"));
-		assertEquals("안녕하시오.", t.find("Hello.", DIALOGUE));
+		Translations t = bundledOnly("Hello.\t안녕.\nHello.\t안녕하시오.\tdialogue\tHans\nHello.\t안녕하세요.\tactions\n");
+		assertEquals("안녕하시오.", t.find("Hello.", HANS));
 		assertEquals("안녕.", t.find("Hello.", Scope.of("dialogue", "Bob", "Bob")));
 		assertEquals("안녕하세요.", t.find("Hello.", Scope.of("actions", "", "")));
-		assertNull(t.find("Bye.", DIALOGUE));
+		assertNull(t.find("Bye.", HANS));
 	}
 
 	@Test
-	public void anyUserLineBeatsTheBundledData()
+	public void aLookupWithoutScopeFindsCategorizedLines()
 	{
-		TranslationTable bundled = new TranslationTable(file("Talk-to\t말 걸기\tactions\tnpc\tMan\n"));
-		TranslationTable user = new TranslationTable(file("Talk-to\t대화하기\n"));
-		Translations translations = new Translations(user, bundled);
-		assertEquals("대화하기", translations.find("Talk-to", Scope.of("actions", "npc", "Man")));
-		assertEquals("말 걸기", new Translations(TranslationTable.EMPTY, bundled).find("Talk-to", Scope.of("actions", "npc", "Man")));
+		Translations t = bundledOnly("Study\t연구하기\tactions\titem\tFire\n");
+		assertEquals("연구하기", t.find("Study", Scope.ANY));
+		assertEquals("연구하기", t.find("Study", Scope.of("actions", "item", "Bonfire")));
+	}
+
+	@Test
+	public void looserMatchesStayInTheSameCategoryFirst()
+	{
+		Translations t = bundledOnly(
+			"Attack\t공격!\tdialogue\tGuard\tGuard\n"
+				+ "Attack\t공격하기\tactions\tnpc\tMan\n"
+				+ "Hello.\t안녕하시오.\tdialogue\tHans\tHans\n");
+		assertEquals("공격하기", t.find("Attack", Scope.of("actions", "npc", "Goblin")));
+		assertEquals("공격!", t.find("Attack", Scope.of("dialogue", "Bob", "Bob")));
+		assertEquals("안녕하시오.", t.find("Hello.", Scope.of("dialogue", "Hans", "Player")));
+	}
+
+	@Test
+	public void aUserLineWithoutCategoryBeatsTheBundledData()
+	{
+		TranslationTable bundled = table("Talk-to\t대화하기\tactions\tnpc\tMan\n");
+		Translations t = new Translations(table("Talk-to\t말 걸기\n"), bundled);
+		assertEquals("말 걸기", t.find("Talk-to", Scope.of("actions", "npc", "Man")));
+		assertEquals("말 걸기", t.find("Talk-to", Scope.ANY));
+	}
+
+	@Test
+	public void aUserLineForOneCategoryDoesNotOverrideAnother()
+	{
+		TranslationTable bundled = table("Attack\t공격하기\tactions\tnpc\tMan\n");
+		Translations t = new Translations(table("Attack\t공격!\tdialogue\n"), bundled);
+		assertEquals("공격하기", t.find("Attack", Scope.of("actions", "npc", "Man")));
+		assertEquals("공격!", t.find("Attack", Scope.of("dialogue", "Bob", "Bob")));
 	}
 
 	@Test
 	public void laterFileWins()
 	{
-		List<Entry> both = new ArrayList<>(file("Talk-to\t말 걸기\n"));
-		both.addAll(file("Talk-to\t대화하기\n"));
-		assertEquals("대화하기", new TranslationTable(both).find("Talk-to", Scope.ANY));
+		List<Entry> both = new ArrayList<>(TsvParser.parse("Talk-to\t말 걸기\n".getBytes(StandardCharsets.UTF_8)).getEntries());
+		both.addAll(TsvParser.parse("Talk-to\t대화하기\n".getBytes(StandardCharsets.UTF_8)).getEntries());
+		assertEquals("대화하기", new Translations(new TranslationTable(both), TranslationTable.EMPTY).find("Talk-to", Scope.ANY));
 	}
 }

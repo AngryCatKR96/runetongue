@@ -1,6 +1,11 @@
 package com.runehangul.text;
 
-/** User files over the bundled data: any user match beats any bundled match. */
+/**
+ * User files over the bundled data. An exact scope match in either layer beats any looser match;
+ * within each kind, the user layer is asked first. So a user line with no category overrides the
+ * bundled data everywhere, but a user line for one category does not override another category's
+ * exact bundled line.
+ */
 public final class Translations
 {
 	public static final Translations EMPTY = new Translations(TranslationTable.EMPTY, TranslationTable.EMPTY);
@@ -16,7 +21,19 @@ public final class Translations
 
 	public String find(String english, Scope scope)
 	{
-		String translation = user.find(english, scope);
-		return translation != null ? translation : bundled.find(english, scope);
+		String t = user.exact(english, scope);
+		if (t == null)
+		{
+			t = bundled.exact(english, scope);
+		}
+		if (t == null)
+		{
+			t = user.relaxed(english, scope);
+		}
+		if (t == null)
+		{
+			t = bundled.relaxed(english, scope);
+		}
+		return t;
 	}
 }

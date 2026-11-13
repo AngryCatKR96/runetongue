@@ -22,6 +22,7 @@ import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameState;
 import net.runelite.api.events.CommandExecuted;
+import net.runelite.api.events.GameStateChanged;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -69,6 +70,8 @@ public class RuneHangulPlugin extends Plugin
 
 	private RuneHangulPanel panel;
 	private NavigationButton navButton;
+	/** A load that finished before login, shown in chat once the player logs in. Client thread only. */
+	private LoadReport unannounced;
 
 	@Override
 	protected void startUp() throws Exception
@@ -92,6 +95,7 @@ public class RuneHangulPlugin extends Plugin
 		clientToolbar.removeNavigation(navButton);
 		navButton = null;
 		panel = null;
+		unannounced = null;
 		log.debug("RuneHangul stopped");
 	}
 
@@ -101,6 +105,15 @@ public class RuneHangulPlugin extends Plugin
 		if (RuneHangulConfig.GROUP.equals(event.getGroup()) && RuneHangulConfig.LANGUAGE.equals(event.getKey()))
 		{
 			reload(true);
+		}
+	}
+
+	@Subscribe
+	public void onGameStateChanged(GameStateChanged event)
+	{
+		if (event.getGameState() == GameState.LOGGED_IN && unannounced != null)
+		{
+			announce(unannounced);
 		}
 	}
 
@@ -148,6 +161,10 @@ public class RuneHangulPlugin extends Plugin
 				if (announce || client.getGameState() == GameState.LOGGED_IN)
 				{
 					announce(report);
+				}
+				else
+				{
+					unannounced = report;
 				}
 			});
 		});
@@ -215,6 +232,7 @@ public class RuneHangulPlugin extends Plugin
 
 	private void announce(LoadReport report)
 	{
+		unannounced = null;
 		say(report.summary());
 		if (report.getError() != null)
 		{
