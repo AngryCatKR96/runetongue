@@ -1,0 +1,81 @@
+name: Plugin Hub update
+
+# When a pull request labelled "translation" is merged (or when run by hand from the Actions tab),
+# tests the merged commit and points plugins/runetongue in runelite/plugin-hub at it: the
+# "runetongue" branch of our plugin-hub fork is reset to upstream with the new commit and
+# force-pushed, which updates the open Plugin Hub pull request or opens a new one. Plugin Hub
+# asks for a single pull request per plugin, so this never opens a second one.
+#
+# Needs the secret PLUGIN_HUB_TOKEN: a classic personal access token with the public_repo scope,
+# able to push to AngryCatKR96/plugin-hub and open pull requests on runelite/plugin-hub.
+on:
+  pull_request_target:
+    types: [closed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: plugin-hub
+  cancel-in-progress: false
+
+env:
+  FORK: AngryCatKR96/plugin-hub
+  UPSTREAM: runelite/plugin-hub
+  BRANCH: runetongue
+  MARKER: plugins/runetongue
+  REPOSITORY_URL: https://github.com/AngryCatKR96/runetongue.git
+
+jobs:
+  update:
+    # pull_request_target runs this file from main with secrets; it only ever checks out the merged
+    # commit on main, never the pull request's own branch.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true &&
+       contains(github.event.pull_request.labels.*.name, 'translation'))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pick the commit
+        id: commit
+        run: echo "sha=${{ github.event.pull_request.merge_commit_sha || github.sha }}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.commit.outputs.sha }}
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '11'
+          cache: gradle
+      - name: Build and test the commit
+        run: ./gradlew build
+
+      - name: Point the Plugin Hub marker at the commit
+        env:
+          GH_TOKEN: ${{ secrets.PLUGIN_HUB_TOKEN }}
+          SHA: ${{ steps.commit.outputs.sha }}
+          TITLE: ${{ github.event.pull_request.title || 'manual run' }}
+        run: |
+          set -euo pipefail
+          if [ -z "$GH_TOKEN" ]; then echo "::error::Add the PLUGIN_HUB_TOKEN secret first"; exit 1; fi
+          git clone --depth 1 "https://x-access-token:${GH_TOKEN}@github.com/${FORK}.git" hub
+          cd hub
+          git remote add upstream "https://github.com/${UPSTREAM}.git"
+          git fetch --depth 1 upstream master
+          git checkout -B "$BRANCH" upstream/master
+          printf 'repository=%s\ncommit=%s\n' "$REPOSITORY_URL" "$SHA" > "$MARKER"
+          git add "$MARKER"
+          if git diff --cached --quiet; then echo "Plugin Hub already points at $SHA"; exit 0; fi
+          git -c user.name="AngryCatKR96" -c user.email="126532946+AngryCatKR96@users.noreply.github.com" \
+            commit -m "Update RuneTongue"
+          git push -f origin "$BRANCH"
+
+          open=$(gh pr list --repo "$UPSTREAM" --head "$BRANCH" --author "@me" --state open --json number --jq '.[0].number // empty')
+          if [ -n "$open" ]; then
+            echo "Updated Plugin Hub pull request #$open to $SHA"
+          else
+            printf 'Updates RuneTongue to %s (%s).\n\nGenerated-by: Claude Code\n' "$SHA" "$TITLE" > body.md
+            gh pr create --repo "$UPSTREAM" --base master --head "${FORK%%/*}:$BRANCH" --title "Update RuneTongue" --body-file body.md
+          fi
