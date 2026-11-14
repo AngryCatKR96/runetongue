@@ -1,6 +1,6 @@
 # 내장 번역 데이터
 
-`data/<언어>/*.tsv`는 플러그인 jar에 들어가는 내장 번역의 원본이다. 빌드할 때 `./gradlew bundleTranslations`가 이 파일들을 `translations_<언어>.tsv.gz` 하나로 묶는다(`processResources`가 자동으로 부른다). 생성된 gz는 커밋하지 않는다.
+`data/<언어>/*.tsv`는 플러그인 jar에 들어가는 내장 번역의 원본이다. `./gradlew bundleTranslations`가 이 파일들을 `src/main/resources/com/runetongue/translations_<언어>.tsv.gz` 하나로 묶는다. **데이터를 고친 뒤에는 이 작업을 돌리고 gz도 함께 커밋한다.** Plugin Hub는 `build=standard` 플러그인을 자기 `build.gradle`로 빌드하므로 빌드 중 생성 작업이 돌지 않는다. 잊으면 `BundledTranslationsTest`가 실패한다. 같은 데이터면 같은 바이트가 나온다.
 
 - 형식은 사용자 번역 폴더와 같다(`docs/CONTEXT.md` 3.7): 머리글 `english, translation, category, sub_category, source`, UTF-8.
 - 한 언어 폴더의 파일은 머리글이 모두 같아야 한다. 파일 이름순으로 이어 붙이므로 뒤 파일이 이긴다.

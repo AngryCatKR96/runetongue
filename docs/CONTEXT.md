@@ -59,7 +59,7 @@ OSRS 게임 폰트는 cp1252 범위만 있어 한글을 못 그린다. RuneLingu
 - jar 안의 gzip 데이터를 시작할 때 백그라운드에서 읽어 메모리에 올린다(클라이언트 스레드에서 디스크 IO 금지).
 - 내장 데이터는 사용자 번역 파일(3.7)과 **같은 tsv 형식**을 gzip으로 묶은 것이고, 같은 파서·정규화 코드로 읽는다. 처음에는 실행 중에 정규화한다. 12만 줄 정규화가 백그라운드에서 2초쯤을 넘으면 빌드할 때 미리 정규화해 두는 쪽으로 바꾼다.
   - 2026-11-13 측정(Apple M5 Pro): 따로 돌리면 1.1~1.4초(대부분 정규화), 개발 클라이언트 시작 중에는 1.9초. 백그라운드라 클라이언트 시작을 막지 않고, 로그인 화면에 있는 동안 끝난다. 당분간 실행 중 정규화를 유지하고, 느린 PC에서 문제가 보이면 미리 정규화로 바꾼다.
-  - 원본은 `data/<언어>/*.tsv`, `./gradlew bundleTranslations`(빌드 때 자동)가 `translations_<언어>.tsv.gz`로 묶는다. 실행 중에 건너뛸 줄은 번들에서 빼고 `build/reports/translations/`에 목록을 쓴다(`data/README.md`).
+  - 원본은 `data/<언어>/*.tsv`, `./gradlew bundleTranslations`가 `src/main/resources/com/runetongue/translations_<언어>.tsv.gz`로 묶고, gz는 커밋한다(2026-11-14: Plugin Hub의 `build=standard`는 우리 `build.gradle`을 템플릿으로 바꿔 빌드하므로, 빌드 중 생성하면 내장 번역이 빠진 jar가 나간다). `BundledTranslationsTest`가 gz와 `data/`가 어긋나면 실패한다. 실행 중에 건너뛸 줄은 번들에서 빼고 `build/reports/translations/`에 목록을 쓴다(`data/README.md`).
 - 키: 정규화한 영어 문장 + category (+ 필요 시 sub_category/source). 정규화한 영어 문장 하나에 범위(category, sub_category, source)가 다른 줄들을 모아 두고, 정확한 범위 → 느슨한 범위 순서로 고른다(순서는 3.7 우선순위). RuneLingual의 P1~P5 단계 조회(정확 → 범주 완화 → 대소문자 무시 → 기호 제거 퍼지)를 참고하되, 실행 중에는 해시 조회만 하도록 단순화한다.
 - 숫자는 `<Num0>`, 색 태그는 `<colNum0>`, 플레이어 이름은 `[player name]` 자리로 바꿔서 조회하고 되돌린다(RuneLingual `Transformer`, `SqlQuery`, `DialogTranslator.replacePlayerNameWithPlaceholder` 참고).
 - **성별 치환자 펼치기:** 원문 DB의 `[man/woman]`, `[sir/madam]` 같은 줄은 RuneLingual에서 영원히 매칭되지 않는다. 데이터를 만들 때 각 선택지로 펼친 영어 키를 모두 만든다.

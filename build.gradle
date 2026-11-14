@@ -29,7 +29,8 @@ dependencies {
 
 group = 'com.runetongue'
 
-// Build-time translation bundler: not part of the plugin jar.
+// Developer tools, not part of the plugin jar. The Plugin Hub builds "standard" plugins with its
+// own build.gradle, so their output is committed: run bundleTranslations after editing data/.
 sourceSets {
 	bundler {
 		compileClasspath += sourceSets.main.output.classesDirs
@@ -37,19 +38,13 @@ sourceSets {
 	}
 }
 
-def bundleDir = layout.buildDirectory.dir('generated/translations')
-def bundleTranslations = tasks.register('bundleTranslations', JavaExec) {
-	description = 'Bundles data/<lang>/*.tsv into translations_<lang>.tsv.gz resources.'
+tasks.register('bundleTranslations', JavaExec) {
+	description = 'Writes data/<lang>/*.tsv into src/main/resources/com/runetongue/translations_<lang>.tsv.gz.'
 	classpath = sourceSets.bundler.runtimeClasspath
 	mainClass = 'com.runetongue.bundler.BundleTranslations'
 	def reportDir = layout.buildDirectory.dir('reports/translations')
-	inputs.dir('data')
-	outputs.dir(bundleDir)
-	outputs.dir(reportDir)
-	doFirst { delete bundleDir }
-	args file('data').path, bundleDir.get().asFile.path, reportDir.get().asFile.path
+	args file('data').path, file('src/main/resources').path, reportDir.get().asFile.path
 }
-sourceSets.main.resources.srcDir(files(bundleDir).builtBy(bundleTranslations))
 
 tasks.register('makeIcon', JavaExec) {
 	description = 'Draws the Plugin Hub icon.png from the bundled glyph font.'
