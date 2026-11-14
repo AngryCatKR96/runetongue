@@ -1,5 +1,49 @@
 # RuneLite Plugin Development — Agent Guidelines
 
+## RuneTongue: changing translations
+
+Follow these steps whenever you add or fix a bundled translation. Background: `docs/CONTEXT.md` (3.3, 3.7) and `data/README.md`.
+
+### Where the data is
+
+- `data/<lang>/*.tsv` is the source of truth. The columns are `english, translation, category, sub_category, source`, in UTF-8, and every file in one language folder has the same header.
+- `src/main/resources/com/runetongue/translations_<lang>.tsv.gz` is generated from it. Never edit the gz by hand, and never edit tsv without regenerating the gz.
+- Files are read in name order, and a later line wins over an earlier one.
+  - To fix a line, change it in place.
+  - Put new game text in the file for its category: dialogue in `transcript_ko_dialogue.tsv`, names in `transcript_ko_name.tsv`, and so on.
+  - Put UI text that the data never had in `zz_runetongue.tsv`.
+- New text usually comes from the user's `~/.runelite/plugin-data/runetongue/missing/ko/missing.tsv`. Its `english` column is already normalized (`<Num0>`, `<colNum0>`, `[player name]`). Copy the line as it is, keep its category, sub_category and source, and fill in the translation. Never edit that file yourself; the plugin rewrites it.
+
+### Rules each translation line must pass
+
+The bundler drops a line that breaks these, and the game then shows English.
+
+- Keep every number from the English as digits ("3 lots" becomes "3묶음", not "세 묶음"). When a number cannot be said naturally, write the digits anyway (`1백만`).
+- Keep each `<colNumN>…</col>` pair, `<br>` where the English has it, `[player name]`, and template slots such as `<!PLAYER_NAME0>`.
+- `[a/b]` choice groups need the same count and order in the translation, or a single translation without choices.
+- One line is one dialogue box or widget text. Do not join or split lines. When the wiki split one sentence across two lines, keep each line's numbers in its own line.
+- Style: follow `~/my_dev/runelingual-ko/translation/STYLE_GUIDE.md` and `glossary.tsv` when they are present.
+  - Game names are written as `English(한국어)`.
+  - Short UI (menu options, buttons, list screens) is Korean only.
+  - Player lines use 해요체.
+  - NPCs keep their own voice.
+
+### After editing
+
+1. Run `./gradlew bundleTranslations`.
+2. Check `build/reports/translations/ko-skipped.tsv`. No new `PLACEHOLDER_MISMATCH` or `CHOICE_MISMATCH` lines may appear. The five `CHOICE_MISMATCH` lines already there are known.
+3. Run `./gradlew test`. `BundledTranslationsTest` fails if the gz does not match `data/`.
+4. Look up a changed line to confirm it, e.g. with a small program on `TextLookup.translate`. Tell the user which `::rh find <english>` to type in game to check it.
+
+### Shipping
+
+- Commit the tsv changes and the regenerated gz together, on a branch, never straight to `main`.
+- Open a pull request on `AngryCatKR96/runetongue` with the `translation` label, for example `gh pr create --label translation`. When the user asks for a translation fix, committing, pushing the branch and opening this pull request are part of the task, so do not stop to ask. Never merge it yourself: the user merges, and merging is what updates the Plugin Hub.
+- When that pull request is merged, `.github/workflows/plugin-hub.yml` tests the merged commit and points the Plugin Hub entry at it. It updates the open `runelite/plugin-hub` pull request, or opens one if none is open.
+  - Never open or edit a `runelite/plugin-hub` pull request by hand, and never open a second one.
+  - If a change reached `main` without the label, run `gh workflow run plugin-hub.yml --repo AngryCatKR96/runetongue`.
+- Plugin Hub still reviews every update, so a fix reaches players only after that review. Say so when you report a fix.
+
 ## Logging
 
 - Use `log.debug()` for developer/diagnostic logging.
