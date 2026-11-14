@@ -1,4 +1,4 @@
-# RuneHangul
+# RuneTongue
 
 A RuneLite plugin that shows Old School RuneScape in Korean (한국어), and lets anyone play with their own hand-made translation in another language by dropping a tsv file into a folder.
 
@@ -18,7 +18,7 @@ When a text has no translation, it stays exactly as the game shows it.
 You do not need a custom build, hosting, hash files or anyone's approval.
 
 1. In the plugin settings, pick your language (Korean, Spanish, Portuguese, French or German for now). Korean has bundled translations; the others start empty.
-2. Open the RuneHangul side panel (the "한" button) and click **Open folder**. The panel and the plugin's chat messages are in English for every language but Korean. The folder is `.runelite/plugin-data/runehangul/translations/<language code>/`, for example `translations/es/`.
+2. Open the RuneTongue side panel (the "한" button) and click **Open folder**. The panel and the plugin's chat messages are in English for every language but Korean. The folder is `.runelite/plugin-data/runetongue/translations/<language code>/`, for example `translations/es/`.
 3. Put one or more `.tsv` files there, or use **Add files** to copy them in.
 4. Click **Reload** or type `::rh reload` in the chat box. No restart is needed. The panel lists, for each file, the lines that were loaded and the lines that were skipped, with the reason.
 
@@ -43,7 +43,7 @@ See [docs/examples/example_ko.tsv](docs/examples/example_ko.tsv) for a small exa
 
 ### Collecting the text you still need
 
-While you play, any text the plugin could not translate is written to `.runelite/plugin-data/runehangul/missing/<language code>/missing.tsv`. The file uses the same format with the translation column left empty. Fill in the translations, move the file into the `translations` folder and reload. Lines that become translated are removed from `missing.tsv` on the next reload, and the panel shows how many are left. **Open untranslated-text folder** opens it.
+While you play, any text the plugin could not translate is written to `.runelite/plugin-data/runetongue/missing/<language code>/missing.tsv`. The file uses the same format with the translation column left empty. Fill in the translations, move the file into the `translations` folder and reload. Lines that become translated are removed from `missing.tsv` on the next reload, and the panel shows how many are left. **Open untranslated-text folder** opens it.
 
 The file stays on your computer; nothing is sent anywhere. Chat and other players' names are never collected. If you would like your translations included in a release, share the file on GitHub or Discord.
 
@@ -62,6 +62,6 @@ The file stays on your computer; nothing is sent anywhere. Chat and other player
 - Parts of the code come from [RuneLingual](https://github.com/YS-jack/RuneLingual-Plugin) (BSD 2-Clause, Copyright (c) 2024, Y. S. Jack). `Widget2ModDict.java` is a copy with small changes; `InterfaceRules.java` is ported from its `Ids` and `WidgetCapture`. The original notice is kept in those files.
 - English source text is game text © Jagex. It comes from the [RuneLingual transcripts](https://github.com/YS-jack/Runelingual-Transcripts). NPC dialogue in that set was collected from the [Old School RuneScape Wiki](https://oldschool.runescape.wiki/) (CC BY-NC-SA 3.0). See [data/README.md](data/README.md).
 - The Korean translations were made for this project.
-- Korean font: [Galmuri](https://github.com/quiple/galmuri) by Lee Minseo, SIL Open Font License 1.1 (`src/main/resources/com/runehangul/Galmuri11-OFL.txt`).
+- Korean font: [Galmuri](https://github.com/quiple/galmuri) by Lee Minseo, SIL Open Font License 1.1 (`src/main/resources/com/runetongue/Galmuri11-OFL.txt`).
 
 This plugin is not affiliated with Jagex or RuneLite.

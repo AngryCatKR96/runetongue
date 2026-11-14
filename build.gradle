@@ -14,7 +14,7 @@ repositories {
 }
 
 def runeLiteVersion = 'latest.release'
-def pluginMainClass = 'com.runehangul.RuneHangulPluginTest'
+def pluginMainClass = 'com.runetongue.RuneTonguePluginTest'
 
 dependencies {
 	compileOnly group: 'net.runelite', name:'client', version: runeLiteVersion
@@ -27,7 +27,7 @@ dependencies {
 	testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
 }
 
-group = 'com.runehangul'
+group = 'com.runetongue'
 
 // Build-time translation bundler: not part of the plugin jar.
 sourceSets {
@@ -41,7 +41,7 @@ def bundleDir = layout.buildDirectory.dir('generated/translations')
 def bundleTranslations = tasks.register('bundleTranslations', JavaExec) {
 	description = 'Bundles data/<lang>/*.tsv into translations_<lang>.tsv.gz resources.'
 	classpath = sourceSets.bundler.runtimeClasspath
-	mainClass = 'com.runehangul.bundler.BundleTranslations'
+	mainClass = 'com.runetongue.bundler.BundleTranslations'
 	def reportDir = layout.buildDirectory.dir('reports/translations')
 	inputs.dir('data')
 	outputs.dir(bundleDir)
@@ -54,7 +54,7 @@ sourceSets.main.resources.srcDir(files(bundleDir).builtBy(bundleTranslations))
 tasks.register('makeIcon', JavaExec) {
 	description = 'Draws the Plugin Hub icon.png from the bundled glyph font.'
 	classpath = sourceSets.bundler.runtimeClasspath + files(sourceSets.main.output.resourcesDir)
-	mainClass = 'com.runehangul.bundler.MakeIcon'
+	mainClass = 'com.runetongue.bundler.MakeIcon'
 	dependsOn 'processResources'
 	args file('icon.png').path
 }

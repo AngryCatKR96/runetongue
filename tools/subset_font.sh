@@ -7,4 +7,4 @@ uvx --from fonttools==4.55.3 pyftsubset "$1" \
 	--text-file="$root/tools/chars_ko.txt" \
 	--name-IDs='*' \
 	--notdef-outline \
-	--output-file="$root/src/main/resources/com/runehangul/Galmuri11-subset.ttf"
+	--output-file="$root/src/main/resources/com/runetongue/Galmuri11-subset.ttf"

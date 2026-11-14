@@ -1,4 +1,4 @@
-# RuneHangul 프로젝트 컨텍스트
+# RuneTongue 프로젝트 컨텍스트
 
 Old School RuneScape(OSRS)를 한국어로 플레이하게 해 주는 RuneLite 플러그인. 2026-11 시작.
 이 문서는 프로젝트를 시작하게 된 배경, 확정된 결정, 이전 작업(RuneLingual 한국어 기여)에서 배운 것, 설계 방향을 모아 둔다. 새로 작업을 시작하는 사람이나 에이전트는 이 문서와 루트의 `AGENTS.md`(RuneLite 공식 플러그인 개발 규칙)를 먼저 읽는다.
@@ -16,7 +16,7 @@ Old School RuneScape(OSRS)를 한국어로 플레이하게 해 주는 RuneLite �
 
 | 항목 | 결정 |
 |---|---|
-| 이름 | RuneHangul (`com.runehangul`, 설정 그룹 `runehangul`) |
+| 이름 | RuneTongue (`com.runetongue`, 설정 그룹·`internalName` `runetongue`, GitHub `AngryCatKR96/runetongue`). 2026-11-14에 RuneHangul에서 바꿨다: 한국어 전용처럼 들려서, 다른 언어 사용자가 tsv 파일로 자기 언어를 쓸 수 있다는 게 드러나지 않았다. 배포 전이라 설정 이전은 두지 않았다. 이 Mac의 작업 폴더는 `~/my_dev/runehangul` 그대로다 |
 | 언어 범위 | 한국어로 먼저 완성. 데이터 형식과 번역 파이프라인은 언어를 바꿔 끼울 수 있게 설계. 1차에서 사용자 번역 폴더는 한국어와 게임 폰트(cp1252)로 그려지는 언어(스페인어·포르투갈어·프랑스어·독일어 등)까지 받는다. 러시아어·일본어처럼 다른 폰트가 필요한 문자는 1차 범위 밖 (2026-11-13) |
 | 사용자 번역 폴더 | **번역 파일을 PC의 정해진 폴더에 넣기만 하면 플러그인이 읽는다.** 커스텀 빌드, 호스팅, 해시 파일, 관리자 승인이 필요 없다. 사용자 파일은 내장 번역을 덮어쓴다. RuneLingual에서 손번역자가 겪은 진입 장벽(커스텀 빌드, GitHub 호스팅, 엑셀→tsv→해시 스크립트, 관리자 없으면 배포 불가)을 없애려는 것 (2026-11-13, 3.7) |
 | 실행 중 번역 | 1차에서 제외. DeepL 같은 외부 번역 API를 쓰지 않는다. 미리 LLM으로 번역해 둔 데이터만 쓴다 |
@@ -93,7 +93,7 @@ OSRS 게임 폰트는 cp1252 범위만 있어 한글을 못 그린다. RuneLingu
 **폴더 위치**
 
 ```
-~/.runelite/plugin-data/runehangul/      (PluginDescriptor internalName = "runehangul", Plugin.getPluginDirectory())
+~/.runelite/plugin-data/runetongue/      (PluginDescriptor internalName = "runetongue", Plugin.getPluginDirectory())
 ├── translations/<언어>/   번역 파일을 넣는 곳 (ko, es, pt, fr, de …)
 └── missing/<언어>/        빠진 문장 내보내기 (3.5)
 ```
@@ -133,7 +133,7 @@ OSRS 게임 폰트는 cp1252 범위만 있어 한글을 못 그린다. RuneLingu
 
 **구현 구조**
 
-- 파서·정규화·치환 기호 검사는 RuneLite에 의존하지 않는 순수 코드(`com.runehangul.text`)로 두고, 플러그인과 번들 생성기가 함께 쓴다. JUnit으로 검증한다.
+- 파서·정규화·치환 기호 검사는 RuneLite에 의존하지 않는 순수 코드(`com.runetongue.text`)로 두고, 플러그인과 번들 생성기가 함께 쓴다. JUnit으로 검증한다.
 - 화면에 그릴 때 cp1252로 표현되는 글자는 게임 폰트, 한글은 Galmuri 이미지, 둘 다 아닌 글자는 `?`(2단계 `GlyphIcons` 동작 그대로).
 
 ### 3.8 하지 않는 것 (Plugin Hub 규칙)
@@ -168,7 +168,7 @@ OSRS 게임 폰트는 cp1252 범위만 있어 한글을 못 그린다. RuneLingu
 
 - JDK: 이 Mac에 Temurin 21. 플러그인은 Java 11 타깃(`options.release.set(11)`).
 - 실행: `./gradlew run` (템플릿에 있음) 또는 `./gradlew shadowJar` 후
-  `java -ea --add-exports java.desktop/com.apple.eawt=ALL-UNNAMED --add-opens java.desktop/com.apple.eawt=ALL-UNNAMED -cp build/libs/runehangul-unspecified-all.jar com.runehangul.RuneHangulPluginTest --developer-mode`
+  `java -ea --add-exports java.desktop/com.apple.eawt=ALL-UNNAMED --add-opens java.desktop/com.apple.eawt=ALL-UNNAMED -cp build/libs/runetongue-unspecified-all.jar com.runetongue.RuneTonguePluginTest --developer-mode`
   (macOS + JDK 21에서는 `com.apple.eawt` 옵션이 없으면 시작 단계에서 실패한다.)
 - Jagex 계정 로그인: RuneLite 설정 창(`/Applications/RuneLite.app/Contents/MacOS/RuneLite --configure`)에서 Client arguments에 `--insecure-write-credentials`를 넣고 Jagex Launcher로 한 번 실행하면 `~/.runelite/credentials.properties`가 생긴다. 이 파일은 로그인 토큰이므로 읽거나 출력하지 않는다. 참고: https://github.com/runelite/runelite/wiki/Using-Jagex-Accounts
 - RuneLite 설정 프로필은 클라우드 동기화된다. 프로필 파일을 직접 고치지 말고 클라이언트 화면에서 설정한다.
@@ -207,4 +207,4 @@ OSRS 게임 폰트는 cp1252 범위만 있어 한글을 못 그린다. RuneLingu
 6. **빠진 문장 수집·내보내기:** 3.7과 같은 형식으로 `missing/<언어>/`에 쓴다. 대화창은 4단계에서 붙였고, 5단계의 메뉴·채팅·인터페이스에도 같은 수집을 붙였다. 다시 불러올 때마다 이제 번역되는 줄은 파일에서 지우고, 패널에 남은 줄 수를 보여 준다. 다른 플레이어 이름이 섞일 수 있는 곳(채팅·친구·클랜 목록, 플레이어 메뉴, 틀에 맞는 문장, 13자 미만 인터페이스 글자)은 수집하지 않는다. (완료 2026-11-14)
 7. **Plugin Hub 제출 준비:** 이름, 설명, 아이콘, README(출처·라이선스), 크기 확인.
    - 2026-11-14: README(영어, 손번역자용 폴더 사용법·형식·빠진 문장 수집, 출처·라이선스), `icon.png`(48×72, `./gradlew makeIcon`이 Galmuri "한"을 4배로 그림), 플러그인 설명 정리, 깨끗한 빌드 확인(jar 5.07MB, 생성기 미포함). 플러그인 자체 문구(패널·채팅 안내·건너뛴 줄 이유)는 한국어가 아닌 언어를 고르면 영어로 나온다.
-   - 남은 것: 이름("RuneHangul"이 스페인어 사용자에게 낯설 수 있음), 위키 데이터 라이선스(6장), Plugin Hub PR.
+   - 2026-11-14: 이름을 RuneTongue로 바꿨다(2장). 위키 데이터(CC BY-NC-SA)는 수익화하지 않으므로 출처를 밝히고 그대로 제출하기로 했다. 남은 것: Plugin Hub PR.
