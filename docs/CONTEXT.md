@@ -99,7 +99,8 @@ OSRS 게임 폰트는 cp1252 범위만 있어 한글을 못 그린다. RuneLingu
 ```
 
 - 파일 IO는 모두 `Filepath`로. 설정에서 언어를 고른다(기본 한국어). 한국어는 내장 번역 + 폴더 파일, 내장 번역이 없는 언어는 폴더 파일만 쓴다.
-- 사이드 패널: **폴더 열기**(`LinkBrowser.open`), **파일 추가**(`Filepath.Chooser`로 고른 tsv를 폴더에 복사 후 다시 불러오기), **다시 불러오기**, 불러오기 결과. 패널 아이콘은 GlyphRenderer로 "한"을 그려 쓴다(PNG 없음).
+- 사이드 패널: **폴더 경로 복사**(클립보드), **파일 추가**(`Filepath.Chooser`로 고른 tsv를 폴더에 복사 후 다시 불러오기), **다시 불러오기**, 불러오기 결과, **빠진 문장 저장…**(`Filepath.Chooser`로 고른 곳에 `missing.tsv` 복사). 패널 아이콘은 GlyphRenderer로 "한"을 그려 쓴다(PNG 없음).
+- 처음에는 `LinkBrowser.open`으로 폴더를 파일 관리자에서 열었으나, Plugin Hub 리뷰(2026-11-14, runelite/plugin-hub#20688)에서 "프로세스 실행" 금지 기능이라 거절됐다. `LinkBrowser.browse`(URL)만 허용된다. 그래서 경로 복사와 저장 창으로 바꿨다.
 - RuneLite의 Swing 기본 폰트(RuneScape 폰트)에는 한글이 없다. 패널 글자는 `FontManager.getDefaultFont()`(OS 폰트로 대체해 그림)로 그린다. 설정 창은 우리가 폰트를 못 바꾸므로 설정 이름·선택지에 한글을 쓰지 않는다(언어 이름은 `Korean`).
 - `Filepath.Chooser`가 돌려준 경로는 고른 파일 범위로 묶여 있어 `getParent()`가 예외를 던진다. 복사할 때는 파일 이름만 쓴다.
 

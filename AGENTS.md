@@ -67,7 +67,7 @@ The bundler drops a line that breaks these, and the game then shows English.
 ## API Usage
 
 - Use `net.runelite.api.gameval` package constants — `ItemID`, `InterfaceID`, `ObjectID`, etc. Never hardcode magic numbers when gameval constants can be used instead.
-- Use `LinkBrowser` to open URLs, not `java.awt.Desktop`
+- Use `LinkBrowser.browse()` to open URLs, not `java.awt.Desktop`. `LinkBrowser.open()` (opening a local file or folder) counts as process execution and is rejected by the Plugin Hub review.
 - When looking up Widgets, pass the component ID from gamevals (eg `client.getWidget(InterfaceID.DomEndLevelUi.LOOT_VALUE)`) - do not manually combine interface + component child IDs.
 - Use of Java reflection is forbidden.
 

@@ -26,25 +26,31 @@ class RuneTonguePanel extends PluginPanel
 
 	private final JTextArea report = new JTextArea();
 	private final JLabel missing = new JLabel(" ");
-	private final JButton openFolderButton;
+	private final JButton copyPathButton;
 	private final JButton addFilesButton;
 	private final JButton reloadButton;
-	private final JButton openMissingButton;
+	private final JButton saveMissingButton;
 	private Language language;
 
-	RuneTonguePanel(Language language, Runnable openFolder, Consumer<List<Filepath>> addFiles, Runnable reload, Runnable openMissingFolder)
+	/**
+	 * Plugin Hub plugins may not start other programs, so the panel cannot open the folder in the
+	 * file manager: it copies the folder's path instead, adds files through a file chooser, and
+	 * saves the untranslated-text file wherever the player picks.
+	 */
+	RuneTonguePanel(Language language, Runnable copyFolderPath, Consumer<List<Filepath>> addFiles, Runnable reload,
+		Consumer<Filepath> saveMissing)
 	{
 		setLayout(new BorderLayout(0, 8));
 
 		JPanel buttons = new JPanel(new GridLayout(0, 1, 0, 4));
-		openFolderButton = button(openFolder);
+		copyPathButton = button(copyFolderPath);
 		addFilesButton = button(() -> chooseFiles(addFiles));
 		reloadButton = button(reload);
-		openMissingButton = button(openMissingFolder);
-		buttons.add(openFolderButton);
+		saveMissingButton = button(() -> chooseMissingTarget(saveMissing));
+		buttons.add(copyPathButton);
 		buttons.add(addFilesButton);
 		buttons.add(reloadButton);
-		buttons.add(openMissingButton);
+		buttons.add(saveMissingButton);
 		missing.setFont(FONT);
 		buttons.add(missing);
 		add(buttons, BorderLayout.NORTH);
@@ -63,10 +69,10 @@ class RuneTonguePanel extends PluginPanel
 	private void setLanguage(Language language)
 	{
 		this.language = language;
-		openFolderButton.setText(language.ui("폴더 열기", "Open folder"));
+		copyPathButton.setText(language.ui("폴더 경로 복사", "Copy folder path"));
 		addFilesButton.setText(language.ui("파일 추가", "Add files"));
 		reloadButton.setText(language.ui("다시 불러오기", "Reload"));
-		openMissingButton.setText(language.ui("빠진 문장 폴더 열기", "Open untranslated-text folder"));
+		saveMissingButton.setText(language.ui("빠진 문장 저장…", "Save untranslated text…"));
 	}
 
 	void show(LoadReport loaded)
@@ -86,6 +92,22 @@ class RuneTonguePanel extends PluginPanel
 	void showMessage(String message)
 	{
 		report.setText(message);
+	}
+
+	private void chooseMissingTarget(Consumer<Filepath> saveMissing)
+	{
+		List<Filepath> chosen = new Filepath.Chooser()
+			.setIsSave()
+			.setAcceptsFiles()
+			.addExtensionFilter("TSV (*.tsv)", "tsv")
+			.setDefaultExtension("tsv")
+			.setFileName("missing_" + language.getCode() + ".tsv")
+			.setDialogTitle(language.ui("빠진 문장 저장", "Save untranslated text"))
+			.showDialog(this);
+		if (chosen != null && !chosen.isEmpty())
+		{
+			saveMissing.accept(chosen.get(0));
+		}
 	}
 
 	private void chooseFiles(Consumer<List<Filepath>> addFiles)

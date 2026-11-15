@@ -18,7 +18,7 @@ When a text has no translation, it stays exactly as the game shows it.
 You do not need a custom build, hosting, hash files or anyone's approval.
 
 1. In the plugin settings, pick your language (Korean, Spanish, Portuguese, French or German for now). Korean has bundled translations; the others start empty.
-2. Open the RuneTongue side panel (the "한" button) and click **Open folder**. The panel and the plugin's chat messages are in English for every language but Korean. The folder is `.runelite/plugin-data/runetongue/translations/<language code>/`, for example `translations/es/`.
+2. Open the RuneTongue side panel (the "한" button) and click **Copy folder path**, then paste the path into your file manager. (Plugin Hub plugins may not open other programs, so the plugin cannot open the folder for you.) The panel and the plugin's chat messages are in English for every language but Korean. The folder is `.runelite/plugin-data/runetongue/translations/<language code>/`, for example `translations/es/`.
 3. Put one or more `.tsv` files there, or use **Add files** to copy them in.
 4. Click **Reload** or type `::rh reload` in the chat box. No restart is needed. The panel lists, for each file, the lines that were loaded and the lines that were skipped, with the reason.
 
@@ -43,7 +43,7 @@ See [docs/examples/example_ko.tsv](docs/examples/example_ko.tsv) for a small exa
 
 ### Collecting the text you still need
 
-While you play, any text the plugin could not translate is written to `.runelite/plugin-data/runetongue/missing/<language code>/missing.tsv`. The file uses the same format with the translation column left empty. Fill in the translations, move the file into the `translations` folder and reload. Lines that become translated are removed from `missing.tsv` on the next reload, and the panel shows how many are left. **Open untranslated-text folder** opens it.
+While you play, any text the plugin could not translate is written to `.runelite/plugin-data/runetongue/missing/<language code>/missing.tsv`. The file uses the same format with the translation column left empty. Fill in the translations, move the file into the `translations` folder and reload. Lines that become translated are removed from `missing.tsv` on the next reload, and the panel shows how many are left. **Save untranslated text…** saves a copy wherever you choose.
 
 The file stays on your computer; nothing is sent anywhere. Chat and other players' names are never collected. If you would like your translations included in a release, share the file on GitHub or Discord.
 

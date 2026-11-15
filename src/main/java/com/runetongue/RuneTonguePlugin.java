@@ -9,6 +9,8 @@ import com.runetongue.text.Scope;
 import com.runetongue.text.SkipReason;
 import com.runetongue.text.SourceText;
 import java.awt.Graphics2D;
+import java.awt.Toolkit;
+import java.awt.datatransfer.StringSelection;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.StandardCopyOption;
@@ -39,7 +41,6 @@ import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.Filepath;
-import net.runelite.client.util.LinkBrowser;
 
 @Slf4j
 @PluginDescriptor(
@@ -107,8 +108,8 @@ public class RuneTonguePlugin extends Plugin
 	@Override
 	protected void startUp() throws Exception
 	{
-		panel = new RuneTonguePanel(config.language(), () -> openFolder(this::folder), this::addFiles, () -> reload(true),
-			() -> openFolder(this::missingFolder));
+		panel = new RuneTonguePanel(config.language(), this::copyFolderPath, this::addFiles, () -> reload(true),
+			this::saveMissing);
 		navButton = NavigationButton.builder()
 			.tooltip("RuneTongue")
 			.icon(icon())
@@ -257,20 +258,51 @@ public class RuneTonguePlugin extends Plugin
 		});
 	}
 
-	private void openFolder(Callable<Filepath> folder)
+	/** Puts the translation folder's path on the clipboard, to paste into the file manager. */
+	private void copyFolderPath()
 	{
 		executor.execute(() ->
 		{
 			try
 			{
-				Filepath dir = folder.call();
+				Filepath dir = folder();
 				dir.createDirectories();
-				LinkBrowser.open(dir.toString());
+				String path = dir.toString();
+				SwingUtilities.invokeLater(() ->
+				{
+					Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(path), null);
+					showMessage(config.language().ui("폴더 경로를 복사했어요. 파일 탐색기 주소창에 붙여 넣으세요:\n",
+						"Copied the folder path. Paste it into your file manager's address bar:\n") + path);
+				});
 			}
 			catch (Exception e)
 			{
-				log.warn("could not open translation folder", e);
-				showMessage(config.language().ui("폴더를 열지 못했어요: ", "Could not open the folder: ") + e.getMessage());
+				log.warn("could not find the translation folder", e);
+				showMessage(config.language().ui("폴더를 찾지 못했어요: ", "Could not find the folder: ") + e.getMessage());
+			}
+		});
+	}
+
+	/** Copies missing/<lang>/missing.tsv to where the player chose to save it. */
+	private void saveMissing(Filepath target)
+	{
+		executor.execute(() ->
+		{
+			try
+			{
+				Filepath source = missingFolder().join(MissingTexts.FILE_NAME);
+				if (!source.exists())
+				{
+					showMessage(config.language().ui("아직 모인 빠진 문장이 없어요.", "No untranslated text has been collected yet."));
+					return;
+				}
+				source.copyTo(target, StandardCopyOption.REPLACE_EXISTING);
+				showMessage(config.language().ui("빠진 문장을 저장했어요: ", "Saved the untranslated text to: ") + target);
+			}
+			catch (Exception e)
+			{
+				log.warn("could not save the missing text file", e);
+				showMessage(config.language().ui("파일을 저장하지 못했어요: ", "Could not save the file: ") + e.getMessage());
 			}
 		});
 	}
